@@ -1,5 +1,5 @@
 // 現場で電波が弱くても開けるように、アプリ本体をキャッシュする
-const CACHE = 'genchi-navi-v25';
+const CACHE = 'genchi-navi-v26';
 const FILES = ['./', './index.html', './manifest.json', './icon.svg'];
 const LIBS = ['./hero.jpg', './logo.png'];
 self.addEventListener('install', e => {

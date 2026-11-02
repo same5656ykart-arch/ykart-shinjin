@@ -51,6 +51,8 @@ header.bar{background:var(--accent);color:var(--accent-fg);position:sticky;top:e
   display:flex;align-items:center;gap:10px;min-height:52px}
 header.bar h1{font-size:17px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 header.bar .sub{font-size:12px;opacity:.85;font-weight:400}
+header.bar .hdr-wm{font-family:var(--font-display);font-size:12px;letter-spacing:.2em;opacity:.7;border-left:1px solid rgba(255,255,255,.35);padding-left:10px}
+@media (max-width:420px){header.bar .hdr-wm{display:none}}
 header.bar button{background:transparent;border:1px solid rgba(255,255,255,.45);color:inherit;border-radius:6px;padding:6px 10px;font-size:13px;white-space:nowrap}
 main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-block:14px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 main > .view{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
@@ -59,7 +61,7 @@ nav.tabs{position:sticky;bottom:0;z-index:5;background:var(--surface);border-top
 nav.tabs button{background:none;border:0;padding:9px 2px 8px;font-size:13px;color:var(--muted);border-top:3px solid transparent;font-weight:700}
 nav.tabs button[aria-current="page"]{color:var(--accent);border-top-color:var(--accent)}
 
-.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:0 1px 2px rgba(29,32,38,.04)}
 .card h2{font-size:16px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .card h2 .cnt{font-size:12px;color:var(--muted);font-weight:400;font-variant-numeric:tabular-nums;margin-left:auto}
 .row{display:flex;flex-wrap:wrap;gap:10px}
@@ -176,33 +178,43 @@ pre.report{white-space:pre-wrap;word-break:break-word;background:var(--surface2)
 .fig{color:var(--fg);background:var(--surface2);border-radius:8px;padding:8px;margin-bottom:10px}
 .fig svg{display:block;width:100%;max-width:420px;height:auto;margin:0 auto}
 
-/* ---- トップ画面 ---- */
+/* ---- トップ画面（HP風） ---- */
 header.bar.home{display:none}
-.hero{position:relative;overflow:hidden;color:#fff;border-radius:0 0 22px 22px;margin:-14px calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0 calc(-1 * max(16px,env(safe-area-inset-right,0px)));
-  padding:calc(18px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) 22px max(20px,env(safe-area-inset-left,0px));
-  background:
-    linear-gradient(180deg,rgba(15,26,42,.15) 0%,rgba(15,26,42,.55) 55%,rgba(15,26,42,.92) 100%),
-    url("hero.jpg") center/cover no-repeat,
-    radial-gradient(120% 80% at 85% 0%,#e8a04a 0%,#b85c3a 28%,transparent 60%),
-    radial-gradient(90% 70% at 10% 100%,#1f3a5f 0%,transparent 60%),
-    var(--hero);
-  min-height:250px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px}
-.hero .sky{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.hero{position:relative;overflow:hidden;color:var(--fg);border-bottom:3px solid var(--sun);margin:-14px calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0 calc(-1 * max(16px,env(safe-area-inset-right,0px)));
+  padding:calc(16px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) 22px max(20px,env(safe-area-inset-left,0px));
+  background:linear-gradient(180deg,var(--surface) 0%,var(--bg) 100%);
+  min-height:280px;display:flex;flex-direction:column;justify-content:flex-end;gap:10px}
+.hero .sky{position:absolute;inset:auto 0 0 0;width:100%;height:62%;pointer-events:none;color:var(--accent);opacity:.16}
 .hero > *:not(.sky){position:relative}
-.hero .brand{display:flex;align-items:center;gap:10px}
-.hero .logo{height:34px;width:auto;max-width:200px;background:#fff;border-radius:6px;padding:4px 8px}
-.hero .eyebrow{font-size:12px;letter-spacing:.14em;opacity:.85}
-.hero h2{font-size:34px;line-height:1.1;letter-spacing:.02em}
-.hero p{margin:0;font-size:13.5px;opacity:.9;max-width:34em}
-.hero .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
-.hero .meta span{font-size:12px;padding:4px 10px;border:1px solid rgba(255,255,255,.35);border-radius:999px;backdrop-filter:blur(4px)}
-.hero .cta{margin-top:10px;background:var(--sun);color:var(--sun-fg);border:0;border-radius:12px;padding:15px 18px;font-size:16px;font-weight:700;font-family:var(--font-display);display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.hero .brand{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:auto}
+.hero .logo{height:36px;width:auto;max-width:200px}
+.wordmark{display:flex;flex-direction:column;line-height:1;gap:3px}
+.wordmark b{font-family:var(--font-display);font-size:22px;letter-spacing:.18em;color:var(--accent)}
+.wordmark small{font-size:10.5px;letter-spacing:.1em;color:var(--muted)}
+.hero .tel{font-size:12px;color:var(--muted);text-align:right;line-height:1.3}
+.hero .tel b{display:block;font-family:var(--font-display);font-size:15px;color:var(--accent);letter-spacing:.04em}
+.hero .eyebrow{font-size:12.5px;letter-spacing:.08em;color:var(--accent);font-weight:700}
+.hero .eyebrow::before{content:"";display:inline-block;width:22px;height:2px;background:var(--sun);vertical-align:middle;margin-right:8px}
+.hero h2{font-size:36px;line-height:1.1;letter-spacing:.02em;color:var(--accent)}
+.hero p{margin:0;font-size:13.5px;color:var(--muted);max-width:34em}
+.hero .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.hero .meta span{font-size:12px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--fg)}
+.hero .cta{margin-top:8px;background:var(--accent);color:var(--accent-fg);border:0;border-radius:12px;padding:15px 18px;font-size:16px;font-weight:700;font-family:var(--font-display);display:flex;align-items:center;justify-content:space-between;box-shadow:0 10px 24px -8px rgba(31,58,95,.5)}
 .hero .cta::after{content:"→";font-size:20px}
+/* 写真がある時 */
+.hero.has-photo{color:#fff;border-bottom:0;border-radius:0 0 22px 22px;
+  background:linear-gradient(180deg,rgba(15,26,42,.1) 0%,rgba(15,26,42,.55) 50%,rgba(15,26,42,.92) 100%),url("hero.jpg") center/cover no-repeat,var(--hero)}
+.hero.has-photo .sky{display:none}
+.hero.has-photo .logo{background:#fff;border-radius:6px;padding:4px 8px}
+.hero.has-photo .wordmark b,.hero.has-photo .wordmark small,.hero.has-photo .tel,.hero.has-photo .tel b,.hero.has-photo .eyebrow,.hero.has-photo h2{color:#fff}
+.hero.has-photo p{color:rgba(255,255,255,.9)}
+.hero.has-photo .meta span{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.35);color:#fff;backdrop-filter:blur(4px)}
+.hero.has-photo .cta{background:var(--sun);color:var(--sun-fg);box-shadow:0 8px 24px rgba(0,0,0,.25)}
 .secttl{display:flex;align-items:baseline;gap:8px;margin-top:4px}
 .secttl h3{font-size:15px}
 .secttl .cnt{font-size:12px;color:var(--muted)}
 .slist{display:flex;flex-direction:column;gap:8px}
-.scard{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:14px;text-align:left;width:100%}
+.scard{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:14px;text-align:left;width:100%;box-shadow:0 1px 2px rgba(29,32,38,.04)}
 .scard .ring{width:44px;height:44px}
 .scard .ring text{font-size:11px;font-weight:700;fill:var(--fg);font-variant-numeric:tabular-nums}
 .scard .t{min-width:0}
@@ -229,6 +241,7 @@ header.bar.home{display:none}
   <header class="bar">
     <button id="backBtn" hidden aria-label="一覧へ戻る">← 一覧</button>
     <h1 id="title">現地調査ナビ <span class="sub">株式会社ワイケイアート</span></h1>
+    <span class="hdr-wm" aria-hidden="true">YK ART</span>
     <span id="saveState" class="sub"></span>
   </header>
   <main><div class="view" id="view"></div></main>
@@ -422,7 +435,7 @@ const ICONS = {
   leak:'<path d="M7 14a4 4 0 0 1 .5-8 5 5 0 0 1 9.5 1 3 3 0 0 1 0 7H7z"/><path d="M12 16l-1.6 2.6a1.8 1.8 0 0 0 3.2 0z"/>',
 };
 const icon=t=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[t]||''}</svg>`;
-const SKY=`<svg class="sky" viewBox="0 0 400 250" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><g fill="none" stroke="rgba(255,255,255,.28)" stroke-width="1.2"><path d="M-10 236 H420"/><path d="M0 236 V186 L34 160 L68 186 V236"/><path d="M62 236 V172 L110 140 L158 172 V236"/><path d="M150 236 V190 L184 164 L218 190 V236"/><path d="M226 236 V150 H262 V236"/><path d="M262 236 V170 L300 146 L338 170 V236"/><path d="M340 236 V196 L370 176 L400 196 V236"/><path d="M118 140 V124 H128 V134"/><path d="M90 200 h12 v14 h-12z M20 206 h10 v10 h-10z M276 192 h12 v12 h-12z M236 170 h14 v10 h-14z M312 190 h10 v10 h-10z"/></g><g fill="rgba(255,255,255,.18)"><circle cx="330" cy="46" r="16"/></g></svg>`;
+const SKY=`<svg class="sky" viewBox="0 0 400 250" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.4"><path d="M-10 236 H420"/><path d="M0 236 V186 L34 160 L68 186 V236"/><path d="M62 236 V172 L110 140 L158 172 V236"/><path d="M150 236 V190 L184 164 L218 190 V236"/><path d="M226 236 V150 H262 V236"/><path d="M262 236 V170 L300 146 L338 170 V236"/><path d="M340 236 V196 L370 176 L400 196 V236"/><path d="M118 140 V124 H128 V134"/><path d="M90 200 h12 v14 h-12z M20 206 h10 v10 h-10z M276 192 h12 v12 h-12z M236 170 h14 v10 h-14z M312 190 h10 v10 h-10z"/></g><g fill="currentColor" opacity=".6"><circle cx="330" cy="46" r="16"/></g></svg>`;
 
 /* 分からない言葉 */
 const GLOSSARY = [
@@ -535,10 +548,11 @@ function renderHome(){
   const todays=list.filter(s=>s.customer.date===today()).length;
   const ring=p=>{ const r=16, c=2*Math.PI*r; return `<svg class="ring" viewBox="0 0 44 44"><circle cx="22" cy="22" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="5"/><circle cx="22" cy="22" r="${r}" fill="none" stroke="${p>=100?'var(--ok)':'var(--accent)'}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${c*p/100} ${c}" transform="rotate(-90 22 22)"/><text x="22" y="26" text-anchor="middle">${p}</text></svg>`; };
   view.innerHTML=`
-  <section class="hero">${SKY}
-    <div class="brand"><img src="logo.png" alt="" onerror="this.hidden=true" class="logo"><span class="eyebrow">株式会社ワイケイアート</span></div>
+  <section class="hero" id="hero">${SKY}
+    <div class="brand"><div class="wm"><img src="logo.png" alt="株式会社ワイケイアート" class="logo" id="logoImg" hidden><div class="wordmark" id="wordmark"><b>YK ART</b><small>株式会社ワイケイアート</small></div></div><div class="tel">佐倉・八千代のリフォーム<b>043-462-4208</b></div></div>
+    <div class="eyebrow">佐倉・八千代でリフォーム・リノベなら、ワイケイアート</div>
     <h2>現地調査ナビ</h2>
-    <p>佐倉・八千代でリフォーム・リノベなら、ワイケイアート。工事の種類を選ぶと、その工事で「見る・測る・写真・聞く」ことが出ます。</p>
+    <p>工事の種類を選ぶと、その工事で「見る・測る・写真・聞く」ことが出ます。上から順に埋めるだけ。</p>
     <div class="meta"><span>${dateStr}</span><span>今日の調査 ${todays}件</span><span>100%自社施工</span></div>
     <button class="cta" id="newBtn">新しい調査を始める</button>
   </section>
@@ -550,6 +564,8 @@ function renderHome(){
     <div class="field" style="margin-top:10px"><label for="bossMail">上司の送り先（メールアドレス）</label><input id="bossMail" type="email" value="${esc(bossMail())}" placeholder="例：boss@ykart.jp"><span class="muted">「上司に報告する」でスマホの共有が使えない時に、このアドレス宛のメールを作ります。</span></div>
     <p class="muted" style="margin:12px 0 6px">まとめ画面で書き出したZIP（写真つき）を、別の端末やPCで読み込めます。</p>
     <label class="btn sm">ZIP / JSON を読み込む<input type="file" id="importFile" accept=".zip,.json,application/zip,application/json" hidden></label></details>`;
+  { const im=new Image(); im.onload=()=>$('#hero')?.classList.add('has-photo'); im.src='hero.jpg'; }
+  { const lg=$('#logoImg'); lg.onload=()=>{ lg.hidden=false; $('#wordmark').hidden=true; }; lg.onerror=()=>{ lg.hidden=true; }; }
   $('#newBtn').onclick=async()=>{ const s=newSurvey(); state.surveys.push(s); state.cur=s; state.tab='sheet'; state.pick=[]; await save(true); render(); };
   view.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{ state.cur=state.surveys.find(s=>s.id===b.dataset.open); state.tab='sheet'; state.pick=null; render(); });
   view.querySelectorAll('[data-kit]').forEach(c=>c.onchange=()=>{ state.kit[c.dataset.kit]=c.checked; try{localStorage.setItem('kit',JSON.stringify(state.kit))}catch(e){} });
