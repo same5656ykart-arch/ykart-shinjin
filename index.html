@@ -177,6 +177,8 @@ pre.report{white-space:pre-wrap;word-break:break-word;background:var(--surface2)
 .gloss div{padding:6px 0;border-bottom:1px dashed var(--line)}
 .gloss b{display:block;color:var(--accent)}
 .gloss span{color:var(--muted)}
+.fig{color:var(--fg);background:var(--surface2);border-radius:8px;padding:8px;margin-bottom:10px}
+.fig svg{display:block;width:100%;max-width:420px;height:auto;margin:0 auto}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
 </style>
 </head>
@@ -220,18 +222,75 @@ const TYPES = {
     shots:[ ['全体','正面から'], ['品番シール','扉の裏など'], ['コンロの品番シール','電池カバーの裏'], ['流しの下','扉を開けて、管とガスの栓が写るように'], ['コンロと換気扇',''] ],
     ask:[ ['一番困っていることは？','狭い・暗い・収納・掃除 など'], ['コンロはガスのまま？電気（IH）にしたい？食器洗い機は欲しい？',''], ['冷蔵庫・レンジ・炊飯器はどこに置く？',''], ['予算の目安と、いつまでに？',''] ]},
   door:{ name:'建具交換', days:'1か所 半日〜',
+    pointsTitle:'大前提',
+    points:[
+      ['枠ごと交換する','枠を外すと、まわりの壁の下地やクロス（壁紙）を傷める。その補修が「付帯工事」として必ず付く。見積りにも入れる'],
+    ],
     intro:[
-      { title:'ドアの種類はどれ？', prefix:'ポイント：', rows:[
-        ['開き戸','ノブを回して、押すか引くかで開ける。ちょうつがいで枠に付いている','一番ふつう。枠ごと替えるか、ドアだけ替えるかで値段が変わる'],
-        ['引き戸','横にスライドさせて開ける。下にレール、上に溝がある','下のレール（戸車）のすり減りを見る'],
-        ['折れ戸','真ん中で折れてたたまれる。クローゼットや浴室に多い','折れる部分の金具を見る'],
-        ['ふすま','和室の紙の引き戸。中が軽い','紙だけ貼り替えるか、本体ごと替えるか'],
-        ['障子','和室の、格子に白い紙を貼った引き戸','紙だけ貼り替えるか、本体ごと替えるか'],
+      { title:'ドアの種類はどれ？', prefix:'', rows:[
+        ['開き戸','ノブを回して、押すか引くかで開ける。横にちょうつがいがある',''],
+        ['引き戸','横にスライドさせて開ける。下にレール、上に溝がある',''],
+        ['折れ戸','真ん中で折れてたたまれる。クローゼットや浴室に多い',''],
+        ['ふすま','和室の紙の引き戸',''],
+        ['障子','和室の、格子に白い紙を貼った引き戸',''],
       ]},
     ],
-    see:[ ['まわりの枠ごと替えるか、ドアだけ替えるか','枠に傷・腐れ・ゆがみがあれば枠ごと。きれいならドアだけでOK'], ['開け閉めしてみて、スムーズか','どこかにこすれる・下に隙間がある・鍵が掛かりにくい、があればメモ'], ['ドアの下の床に段差や敷居（床のレール状の木）はあるか',''] ],
-    measure:[ ['枠の内側の幅','mm','左の枠の内側から、右の枠の内側まで。メジャーを枠に当てて測る'], ['枠の内側の高さ','mm','床から、枠の内側の上まで'], ['壁の厚み','mm','ドアを開けて、枠の奥行き（手前から奥まで）を測る'] ],
-    shots:[ ['ドア 全体','閉めた状態で正面から'], ['枠と床の境目','段差や敷居が分かるように'], ['ちょうつがい・戸車・鍵','ドアを開けて横から'] ],
+    figs:{
+      see:`<svg viewBox="0 0 380 160" role="img" aria-label="開き勝手と引き勝手の見方">
+        <g font-size="11" font-family="inherit" fill="currentColor" stroke="none">
+          <text x="6" y="14" font-weight="700">開き戸：ちょうつがいがどちら側か</text>
+          <text x="246" y="14" font-weight="700">引き戸：動く向き</text>
+          <text x="44" y="132" text-anchor="middle" font-weight="700">左吊元</text><text x="44" y="147" text-anchor="middle" font-size="10">ちょうつがいが左</text>
+          <text x="156" y="132" text-anchor="middle" font-weight="700">右吊元</text><text x="156" y="147" text-anchor="middle" font-size="10">ちょうつがいが右</text>
+          <text x="298" y="132" text-anchor="middle" font-weight="700">右引き</text><text x="298" y="147" text-anchor="middle" font-size="10">扉が右へ動く</text>
+        </g>
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="14" y="24" width="60" height="90" rx="2"/><rect x="126" y="24" width="60" height="90" rx="2"/>
+          <rect x="246" y="24" width="104" height="90" rx="2"/><line x1="298" y1="24" x2="298" y2="114" stroke-dasharray="4 3"/>
+        </g>
+        <g fill="var(--accent)">
+          <circle cx="18" cy="38" r="4"/><circle cx="18" cy="100" r="4"/>
+          <circle cx="182" cy="38" r="4"/><circle cx="182" cy="100" r="4"/>
+          <rect x="248" y="26" width="50" height="86" opacity=".25"/>
+        </g>
+        <g fill="none" stroke="var(--accent)" stroke-width="2.5">
+          <path d="M70 110 A52 52 0 0 0 20 64"/><path d="M24 68 L20 64 L26 62"/>
+          <path d="M130 110 A52 52 0 0 1 180 64"/><path d="M176 68 L180 64 L174 62"/>
+          <path d="M304 69 H342"/><path d="M334 61 L342 69 L334 77"/>
+        </g>
+      </svg>`,
+      measure:`<svg viewBox="0 0 390 190" role="img" aria-label="枠の測り方">
+        <g font-size="11" font-family="inherit" fill="currentColor" stroke="none">
+          <text x="6" y="14" font-weight="700">正面：幅と高さは「枠の外側」で</text>
+          <text x="200" y="14" font-weight="700">上から見た断面：見込みとちり</text>
+          <text x="80" y="162" text-anchor="middle" font-size="10">W：枠の外 〜 枠の外</text>
+          <text x="80" y="178" text-anchor="middle" font-size="10">H：床 〜 枠の上（外側）</text>
+          <text x="150" y="88" font-weight="700">H</text>
+          <text x="286" y="60" text-anchor="middle" font-size="10">手前（自分の側）</text>
+          <text x="286" y="140" text-anchor="middle" font-size="10">奥</text>
+          <text x="226" y="99" text-anchor="end" font-size="10">見込み</text>
+          <text x="348" y="81" font-size="10">ちり</text><text x="348" y="99" font-size="10">壁の厚み</text><text x="348" y="117" font-size="10">ちり</text>
+          <text x="286" y="178" text-anchor="middle" font-weight="700">壁の厚み ＝ 見込み − ちり（手前＋奥）</text>
+        </g>
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="30" y="28" width="100" height="110"/><rect x="40" y="38" width="80" height="100"/>
+          <line x1="10" y1="138" x2="150" y2="138"/>
+        </g>
+        <g fill="currentColor" opacity=".18"><rect x="200" y="84" width="46" height="22"/><rect x="326" y="84" width="46" height="22"/></g>
+        <g fill="none" stroke="currentColor" stroke-width="2"><rect x="246" y="72" width="80" height="46"/><path d="M200 84 H246 M200 106 H246 M326 84 H372 M326 106 H372"/></g>
+        <g fill="none" stroke="var(--accent)" stroke-width="2">
+          <path d="M30 148 H130"/><path d="M34 144 L30 148 L34 152 M126 144 L130 148 L126 152"/>
+          <path d="M142 28 V138"/><path d="M138 32 L142 28 L146 32 M138 134 L142 138 L146 134"/>
+          <path d="M234 72 V118"/><path d="M230 76 L234 72 L238 76 M230 114 L234 118 L238 114"/>
+          <path d="M340 72 V118"/><path d="M336 84 H344 M336 106 H344"/><path d="M336 76 L340 72 L344 76 M336 114 L340 118 L344 114"/>
+        </g>
+      </svg>`,
+    },
+    see:[ ['開き勝手：ちょうつがいが右か 左か。手前に開くか 奥に開くか','上の図を見る。ドアを引いて開ける側（手前）に立って見る'], ['引き勝手：開けた時に扉が右へ動くか 左へ動くか','引き戸の場合'], ['マンションなら、壁を叩いてコンクリートか調べる','コンコンと硬くて響かない音ならコンクリート。開口を広げられない'], ['枠のまわりの壁とクロスの状態','枠を外すと傷む範囲。補修がどこまで要るか'] ],
+    measure:[ ['高さ：床から、枠の上の外側まで','mm','枠の内側ではなく外側'], ['幅：枠の外から、枠の外まで','mm',''], ['枠の見込み：枠の手前の面から、奥の面まで','mm','上の断面図の「見込み」。枠の厚み方向の寸法'], ['枠ちり（手前側）：枠が壁より出ている分','mm','上の断面図の「ちり」'], ['枠ちり（奥側）','mm','空欄なら手前と同じとして計算'] ],
+    calcNote:'壁の厚み ＝ 枠の見込み − ちり（手前）− ちり（奥）。新しい枠を選ぶのに必要。',
+    calcSimple:d=>{ const m=+d[2]||0, a=+d[3]||0, b=d[4]===''||d[4]==null?a:(+d[4]||0); if(!m) return null; return [['壁の厚み（計算）', `${m-a-b} mm`]]; },
+    shots:[ ['ドア 全体','閉めた状態で、ちょうつがい側が分かるように'], ['枠と壁の境目','横から。ちり（出っ張り）が分かるように'], ['反対側から',''] ],
     ask:[ ['一番困っていることは？','開けにくい・音がする・古い・隙間風 など'], ['何か所替える？',''], ['色やデザインの希望は？','カタログを見せる'], ['予算の目安と、いつまでに？',''] ]},
   floor:{ name:'床張り替え', days:'1部屋 1〜2日',
     intro:[
@@ -339,6 +398,12 @@ const GLOSSARY = [
   ['敷居（しきい）','部屋の出入口の床にある、レール状の木'],
   ['戸車（とぐるま）','引き戸の下に付いている小さな車輪'],
   ['上張り（うわばり）','今の床をはがさず、上に新しい床を重ねて貼る方法'],
+  ['開き勝手（ひらきがって）','開き戸の、ちょうつがいが右か左か・手前に開くか奥に開くか'],
+  ['引き勝手（ひきがって）','引き戸を開けた時に、扉が右へ動くか左へ動くか'],
+  ['吊元（つりもと）','ドアのちょうつがいが付いている側'],
+  ['見込み（みこみ）','枠の厚み方向の寸法。手前の面から奥の面まで'],
+  ['ちり','枠が壁の面より出っ張っている分'],
+  ['付帯工事（ふたいこうじ）','本体の工事に伴って必ず必要になる、まわりの補修などの工事'],
 ];
 function blocks(s){ return [...(s.types||[]).map(t=>({key:t, ...TYPES[t]})), {key:'common', ...COMMON}]; }
 const KIT = ['メジャー(5.5m)','レーザー距離計','スマホ(充電OK)','懐中電灯','脚立','マスキングテープ','筆記用具','名刺','カタログ','スリッパ','養生シート','マスク・手袋'];
@@ -439,8 +504,11 @@ function renderPick(){
 }
 
 /* 調査シート：種類ごとに 見る → 測る → 写真 → 聞く */
-function calcRows(b,s){ if(!b.calc) return null; return b.calc(b.measure.map((_,i)=>s.dims[key(b.key,'measure',i)])); }
-function calcHtml(b,s){ const rows=calcRows(b,s); return `<div class="tip" style="margin-top:8px">${b.calcNote?`<b>${esc(b.calcNote)}</b>`:''}${rows?`<table class="calc-t"><tr><th></th><th>実平米</th><th>提示平米</th></tr>${rows.map(([n,a,k])=>`<tr><td>${esc(n)}</td><td class="num">${a.toFixed(1)} ㎡</td><td class="num"><b>${(a*k).toFixed(1)} ㎡</b><small>（×${k}）</small></td></tr>`).join('')}</table>`:'<span class="muted">幅・奥行・天井高を入れると自動計算します</span>'}</div>`; }
+function dimVals(b,s){ return b.measure.map((_,i)=>s.dims[key(b.key,'measure',i)]); }
+function calcRows(b,s){ if(!b.calc) return null; return b.calc(dimVals(b,s)); }
+function calcSimpleRows(b,s){ if(!b.calcSimple) return null; return b.calcSimple(dimVals(b,s)); }
+function calcHtml(b,s){ if(b.calcSimple){ const r=calcSimpleRows(b,s); return `<div class="tip" style="margin-top:8px">${b.calcNote?`<b>${esc(b.calcNote)}</b>`:''}${r?r.map(([n,v])=>`<div style="margin-top:4px">${esc(n)}：<b>${esc(v)}</b></div>`).join(''):'<span class="muted">見込みとちりを入れると自動計算します</span>'}</div>`; }
+  const rows=calcRows(b,s); return `<div class="tip" style="margin-top:8px">${b.calcNote?`<b>${esc(b.calcNote)}</b>`:''}${rows?`<table class="calc-t"><tr><th></th><th>実平米</th><th>提示平米</th></tr>${rows.map(([n,a,k])=>`<tr><td>${esc(n)}</td><td class="num">${a.toFixed(1)} ㎡</td><td class="num"><b>${(a*k).toFixed(1)} ㎡</b><small>（×${k}）</small></td></tr>`).join('')}</table>`:'<span class="muted">幅・奥行・天井高を入れると自動計算します</span>'}</div>`; }
 function renderSheet(){
   const s=state.cur;
   const sec=(b,kind,no,title,inner,cnt)=>`<div class="card sec" id="${b.key}-${kind}"><h2><span class="no">${no}</span>${title} <span class="cnt ${cnt[0]===cnt[1]?'ok':''}">${cnt[0]}/${cnt[1]}</span></h2>${inner}</div>`;
@@ -450,13 +518,13 @@ function renderSheet(){
     const shots=b.shots.map(([lab,hint],i)=>{ const k=key(b.key,'shots',i); const p=s.shots[k]; return `<div class="shot ${p?'done':''}"><div class="th">${p?`<img src="${p.data}" alt="">`:'未'}</div><div class="lb">${esc(lab)}${hint?`<small>${esc(hint)}</small>`:''}</div><div class="ops"><label class="btn sm ${p?'':'primary'}">${p?'撮り直す':'📷 撮る'}<input type="file" accept="image/*" capture="environment" data-shot="${k}"></label>${p?`<button class="btn sm danger" data-delshot="${k}">×</button>`:''}</div></div>`; }).join('');
     const ask=b.ask.map(([q,hint],i)=>{ const k=key(b.key,'ask',i); return `<div class="ask"><label for="a_${k}">${esc(q)}${hint?`<small>${esc(hint)}</small>`:''}</label><input id="a_${k}" data-ask="${k}" value="${esc(s.answers[k]||'')}" placeholder="お客様の言葉をそのままメモ"></div>`; }).join('');
     const alert=b.alert?`<div class="alert"><h2>⚠ 注意：${esc(b.alert.title)}</h2><ol>${b.alert.items.map((it,i)=>{ const k=key(b.key,'gear',i); const on=s.see[k]?.done; return `<li><label><input type="checkbox" data-see="${k}" ${on?'checked':''}><span class="n">${'①②③④⑤⑥'[i]||i+1}</span>${esc(it)}</label></li>`; }).join('')}</ol></div>`:'';
-    const pointsHtml=b.points?`<div class="card points"><h2>ここだけは押さえる 3つのポイント</h2><ol>${b.points.map(([t,d])=>`<li><b>${esc(t)}</b><span>${esc(d)}</span></li>`).join('')}</ol></div>`:'';
-    const introHtml=(b.intro||[]).map((g,gi)=>{ const k=key(b.key,'intro',gi); const cur=s.answers[k]||''; return `<div class="card"><h2>${esc(g.title)} <span class="cnt ${cur?'ok':''}">${cur?'✓ '+esc(cur):'どれか1つ選ぶ'}</span></h2><div class="cases">${g.rows.map(([pl,how,note])=>`<label class="case pick ${cur===pl?'sel':''}"><input type="radio" name="intro_${b.key}_${gi}" data-intro="${k}" value="${esc(pl)}" ${cur===pl?'checked':''}><b>${esc(pl)}</b><span>${esc(how)}</span><span class="where">→ ${esc(g.prefix)}${esc(note)}</span></label>`).join('')}</div></div>`; }).join('');
+    const pointsHtml=b.points?`<div class="card points"><h2>${esc(b.pointsTitle||'ここだけは押さえる 3つのポイント')}</h2><ol>${b.points.map(([t,d])=>`<li><b>${esc(t)}</b><span>${esc(d)}</span></li>`).join('')}</ol></div>`:'';
+    const introHtml=(b.intro||[]).map((g,gi)=>{ const k=key(b.key,'intro',gi); const cur=s.answers[k]||''; return `<div class="card"><h2>${esc(g.title)} <span class="cnt ${cur?'ok':''}">${cur?'✓ '+esc(cur):'どれか1つ選ぶ'}</span></h2><div class="cases">${g.rows.map(([pl,how,note])=>`<label class="case pick ${cur===pl?'sel':''}"><input type="radio" name="intro_${b.key}_${gi}" data-intro="${k}" value="${esc(pl)}" ${cur===pl?'checked':''}><b>${esc(pl)}</b><span>${esc(how)}</span>${note?`<span class="where">→ ${esc(g.prefix)}${esc(note)}</span>`:''}</label>`).join('')}</div></div>`; }).join('');
     const cases=b.cases?`<div class="card"><h2>${esc(b.cases.title)} <span class="cnt">お客様への説明にも</span></h2><div class="cases">${b.cases.rows.map(([pl,cause,where])=>`<div class="case"><b>${esc(pl)}</b><span>${esc(cause)}</span><span class="where">→ ${esc(b.cases.prefix)}${esc(where)}</span></div>`).join('')}</div></div>`:'';
     return `<div class="sheet-head"><h2>${esc(b.name)}</h2>${b.days?`<span class="pill">${esc(b.days)}</span>`:''}</div>${alert}
       ${b.key!=='common'?`<div class="jump"><button data-jump="${b.key}-see">見る ${c.see[0]}/${c.see[1]}</button><button data-jump="${b.key}-measure">測る ${c.measure[0]}/${c.measure[1]}</button><button data-jump="${b.key}-shots">写真 ${c.shots[0]}/${c.shots[1]}</button><button data-jump="${b.key}-ask">聞く ${c.ask[0]}/${c.ask[1]}</button></div>`:''}
-      ${pointsHtml}${introHtml}${sec(b,'see','1','見る',see,c.see)}${cases}
-      ${b.measure.length?sec(b,'measure','2','測る',`<div class="tip" style="margin-bottom:8px">単位は mm（1cm＝10mm）。分からない所は空欄のまま、写真を撮って先輩に聞く。</div>`+measure+(b.calc?`<div id="${b.key}-calc">${calcHtml(b,s)}</div>`:''),c.measure):''}
+      ${pointsHtml}${introHtml}${sec(b,'see','1','見る',(b.figs?.see?`<div class="fig">${b.figs.see}</div>`:'')+see,c.see)}${cases}
+      ${b.measure.length?sec(b,'measure','2','測る',`<div class="tip" style="margin-bottom:8px">単位は mm（1cm＝10mm）。分からない所は空欄のまま、写真を撮って先輩に聞く。</div>`+(b.figs?.measure?`<div class="fig">${b.figs.measure}</div>`:'')+measure+((b.calc||b.calcSimple)?`<div id="${b.key}-calc">${calcHtml(b,s)}</div>`:''),c.measure):''}
       ${b.shots.length?sec(b,'shots','3','写真を撮る',shots,c.shots):''}
       ${b.ask.length?sec(b,'ask','4','聞く',ask,c.ask):''}`; }).join('');
   view.innerHTML=`${html}
@@ -550,7 +618,7 @@ function buildExport(s){
     return { 種類コード:b.key, 種類:b.name, 選択:sel,
       見る:b.see.map(([lab],i)=>{ const v=s.see[key(b.key,'see',i)]||{}; return {項目:lab,確認済:!!v.done,メモ:v.memo||''}; }),
       採寸:b.measure.map(([lab,unit],i)=>({項目:lab,値:s.dims[key(b.key,'measure',i)]??'',単位:unit||''})),
-      計算:cr.map(([n,a,k])=>({項目:n,実平米:+a.toFixed(2),倍率:k,提示平米:+(a*k).toFixed(2)})),
+      計算:[...cr.map(([n,a,k])=>({項目:n,実平米:+a.toFixed(2),倍率:k,提示平米:+(a*k).toFixed(2)})), ...(calcSimpleRows(b,s)||[]).map(([n,v])=>({項目:n,値:v}))],
       写真:shots,
       聞く:b.ask.map(([q],i)=>({質問:q,回答:s.answers[key(b.key,'ask',i)]||''})) };
   });
@@ -612,6 +680,7 @@ function report(s){
     L.push(`[見た] ${seen.length-unseen.length}/${seen.length}`,...notes); if(unseen.length) L.push(`　未確認：${unseen.join('、')}`);
     if(b.measure.length){ L.push(`[採寸]`); b.measure.forEach(([lab,unit],i)=>{ const v=s.dims[key(b.key,'measure',i)]; L.push(`・${lab}：${String(v??'').trim()?v+(unit?' '+unit:''):'未'}`); }); }
     const cr=calcRows(b,s); if(cr) cr.forEach(([n,a,k])=>L.push(`・${n}：実平米 ${a.toFixed(1)}㎡ → 提示 ${(a*k).toFixed(1)}㎡（×${k}）`));
+    const cs=calcSimpleRows(b,s); if(cs) cs.forEach(([n,v])=>L.push(`・${n}：${v}`));
     const taken=b.shots.filter((_,i)=>s.shots[key(b.key,'shots',i)]).length; const notTaken=b.shots.filter((_,i)=>!s.shots[key(b.key,'shots',i)]).map(x=>x[0]);
     if(b.shots.length) L.push(`[写真] ${taken}/${b.shots.length}${notTaken.length?'　未撮影：'+notTaken.join('、'):''}`);
     if(b.ask.length) L.push(`[聞いた]`); b.ask.forEach(([q],i)=>{ const a=s.answers[key(b.key,'ask',i)]; L.push(`・${q} → ${String(a??'').trim()?a:'未'}`); });
