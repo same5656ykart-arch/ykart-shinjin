@@ -229,14 +229,19 @@ header.bar.home{display:none}
 .scard .t b{display:block;font-family:var(--font-display);font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .scard .t span{font-size:12px;color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .scard .go{color:var(--muted);font-size:18px}
-.types{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.types button{border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:14px 12px;font-family:var(--font-display);font-weight:700;font-size:16px;display:grid;grid-template-columns:40px 1fr;gap:4px 10px;align-items:center;text-align:left;min-height:84px}
-.types button .ic{grid-row:span 2;width:40px;height:40px;border-radius:10px;background:var(--green-bg);color:var(--green);display:flex;align-items:center;justify-content:center}
-.types button .ic svg{width:24px;height:24px}
-.types button small{font-family:var(--font-body);font-weight:400;font-size:11.5px;color:var(--muted);line-height:1.3}
-.types button[aria-pressed="true"]{border-color:var(--accent);background:var(--tip);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-.types button[aria-pressed="true"] .ic{background:var(--accent);color:#fff}
-.types button[aria-pressed="true"]::before{content:none}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.types button{position:relative;aspect-ratio:1/1;border:3px solid var(--accent);border-radius:4px;padding:0;overflow:hidden;background-size:cover;background-position:center;background-color:var(--tb,#eee);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.types button .ic{display:none;position:absolute;inset:auto 10px 10px auto;width:40px;height:40px;color:var(--tc);opacity:.55}
+.types button.nophoto .ic{display:flex}
+.types button .ic svg{width:40px;height:40px}
+.types button .band{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.86);padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.2}
+.types button .band b{font-family:var(--font-display);font-size:18px;color:var(--tc);letter-spacing:.04em}
+.types button .band small{font-family:Georgia,"Times New Roman",serif;font-size:9px;letter-spacing:.18em;color:var(--tc);opacity:.85}
+.types button .band em{font-style:normal;font-size:10.5px;color:var(--muted);margin-top:2px}
+.types button .badge{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;font-size:15px;display:none;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.types button[aria-pressed="true"]{border-color:var(--green);box-shadow:0 0 0 3px rgba(95,174,58,.35)}
+.types button[aria-pressed="true"] .badge{display:flex;background:var(--green)}
+.types button[aria-pressed="true"] .band{background:rgba(255,255,255,.96)}
 .homecard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
 .homecard summary{cursor:pointer;font-weight:700;font-family:var(--font-display);list-style:none;display:flex;align-items:center;gap:8px}
 .homecard summary::before{content:"▸";color:var(--muted);transition:transform .15s}
@@ -442,6 +447,7 @@ const ICONS = {
   exterior:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M9 20v-5h6v5"/>',
   leak:'<path d="M7 14a4 4 0 0 1 .5-8 5 5 0 0 1 9.5 1 3 3 0 0 1 0 7H7z"/><path d="M12 16l-1.6 2.6a1.8 1.8 0 0 0 3.2 0z"/>',
 };
+const TILE={ toilet:['TOILET','#3b6fb6','#dbe7f6'], bath:['BATHROOM','#2aa198','#d8f0ec'], wash:['WASHSTAND','#7b5fc3','#e6dff5'], kitchen:['KITCHEN','#f26f21','#fde3d2'], door:['DOOR','#8d6e3c','#efe4d2'], floor:['FLOORING','#c9961a','#f8ecc9'], cloth:['WALLPAPER','#c74b9a','#f6dcec'], exterior:['EXTERIOR PAINT','#5fae3a','#e3f1da'], leak:['RAIN LEAK','#5c6b7a','#e2e7ec'] };
 const icon=t=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[t]||''}</svg>`;
 const SKY=`<svg class="sky" viewBox="0 0 400 250" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.4"><path d="M-10 236 H420"/><path d="M0 236 V186 L34 160 L68 186 V236"/><path d="M62 236 V172 L110 140 L158 172 V236"/><path d="M150 236 V190 L184 164 L218 190 V236"/><path d="M226 236 V150 H262 V236"/><path d="M262 236 V170 L300 146 L338 170 V236"/><path d="M340 236 V196 L370 176 L400 196 V236"/><path d="M118 140 V124 H128 V134"/><path d="M90 200 h12 v14 h-12z M20 206 h10 v10 h-10z M276 192 h12 v12 h-12z M236 170 h14 v10 h-14z M312 190 h10 v10 h-10z"/></g><g fill="currentColor" opacity=".6"><circle cx="330" cy="46" r="16"/></g></svg>`;
 
@@ -586,9 +592,10 @@ function renderPick(){
   const s=state.cur; const sel=state.pick ?? [...(s.types||[])]; state.pick=sel;
   view.innerHTML=`
   <div class="home-hero"><h2>今日は何の工事ですか？</h2><p class="muted">当てはまるものを選んでください（複数OK）。</p></div>
-  <div class="types">${TYPE_ORDER.map(t=>`<button data-type="${t}" aria-pressed="${sel.includes(t)}"><span class="ic">${icon(t)}</span><span>${esc(TYPES[t].name)}</span><small>${esc(TYPES[t].days)}</small></button>`).join('')}</div>
+  <div class="types">${TYPE_ORDER.map(t=>{ const [en,col,bg]=TILE[t]; return `<button data-type="${t}" aria-pressed="${sel.includes(t)}" style="--tc:${col};--tb:${bg};background-image:url('img/${t}.jpg'),linear-gradient(135deg,${bg},#fff)"><span class="ic">${icon(t)}</span><span class="badge">✓</span><span class="band"><b>${esc(TYPES[t].name)}</b><small>${en}</small><em>${esc(TYPES[t].days)}</em></span></button>`; }).join('')}</div>
   <button class="btn primary block" id="pickOk" ${sel.length?'':'disabled'}>${sel.length?`${sel.map(t=>TYPES[t].name).join('・')} の調査シートを開く →`:'種類を選んでください'}</button>
   ${(s.types||[]).length?`<button class="btn block" id="pickCancel">変更しない</button>`:''}`;
+  view.querySelectorAll('[data-type]').forEach(b=>{ const im=new Image(); im.onerror=()=>b.classList.add('nophoto'); im.src=`img/${b.dataset.type}.jpg`; });
   view.querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>{ const t=b.dataset.type; const i=sel.indexOf(t); if(i>=0) sel.splice(i,1); else sel.push(t); sel.sort((a,b)=>TYPE_ORDER.indexOf(a)-TYPE_ORDER.indexOf(b)); renderPick(); });
   $('#pickOk').onclick=()=>{ if(!sel.length) return; s.types=[...sel]; state.pick=null; state.tab='sheet'; save(true); render(); };
   const pc=$('#pickCancel'); if(pc) pc.onclick=()=>{ state.pick=null; render(); };
