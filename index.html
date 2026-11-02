@@ -189,6 +189,8 @@ header.bar.home{display:none}
   min-height:250px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px}
 .hero .sky{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .hero > *:not(.sky){position:relative}
+.hero .brand{display:flex;align-items:center;gap:10px}
+.hero .logo{height:34px;width:auto;max-width:200px;background:#fff;border-radius:6px;padding:4px 8px}
 .hero .eyebrow{font-size:12px;letter-spacing:.14em;opacity:.85}
 .hero h2{font-size:34px;line-height:1.1;letter-spacing:.02em}
 .hero p{margin:0;font-size:13.5px;opacity:.9;max-width:34em}
@@ -534,7 +536,7 @@ function renderHome(){
   const ring=p=>{ const r=16, c=2*Math.PI*r; return `<svg class="ring" viewBox="0 0 44 44"><circle cx="22" cy="22" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="5"/><circle cx="22" cy="22" r="${r}" fill="none" stroke="${p>=100?'var(--ok)':'var(--accent)'}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${c*p/100} ${c}" transform="rotate(-90 22 22)"/><text x="22" y="26" text-anchor="middle">${p}</text></svg>`; };
   view.innerHTML=`
   <section class="hero">${SKY}
-    <div class="eyebrow">YK ART ／ 株式会社ワイケイアート</div>
+    <div class="brand"><img src="logo.png" alt="" onerror="this.hidden=true" class="logo"><span class="eyebrow">株式会社ワイケイアート</span></div>
     <h2>現地調査ナビ</h2>
     <p>工事の種類を選ぶと、その工事で「見る・測る・写真・聞く」ことが出ます。上から順に埋めるだけ。</p>
     <div class="meta"><span>${dateStr}</span><span>今日の調査 ${todays}件</span><span>データは端末内に保存</span></div>
@@ -628,7 +630,7 @@ function renderCustomer(){
   <div class="tip"><b>声かけ例</b>「お見積りの宛名に使いますので、お名前とご住所、ご連絡先をお願いします」</div>
   <div class="card"><h2>お客様情報</h2>
     ${f('name','お客様名',{ph:'例：山田 太郎'})}
-    ${f('address','住所',{ph:'例：鹿児島市〇〇町1-2-3'})}
+    ${f('address','住所',{ph:'例：佐倉市上志津1-2-3'})}
     ${f('tel','電話番号',{type:'tel',ph:'例：090-0000-0000'})}
     <div class="row">${f('date','調査日',{type:'date'})}${f('staff','担当者',{ph:'自分の名前'})}${f('built','築年数',{type:'number',ph:'だいたいでOK',attrs:'inputmode="numeric"'})}</div>
     ${f('note','その他',{ta:1,ph:'ご家族構成、留守・鍵のこと、他社見積の有無、補助金の希望など'})}
