@@ -16,6 +16,7 @@
   --accent:#1f3a5f; --accent-fg:#ffffff;
   --ok:#2e7d4f; --bad:#c8452b; --bad-bg:#fbe9e5; --ok-bg:#e4f2ea;
   --tip:#eef3fa; --tip-line:#b9cbe4;
+  --sun:#f2b544; --sun-fg:#1d2026; --hero:#0f1a2a;
   --font-body:"BIZ UDPGothic","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
   --font-display:"Zen Kaku Gothic New","BIZ UDPGothic","Hiragino Sans",sans-serif;
 }
@@ -87,11 +88,6 @@ nav.tabs button[aria-current="page"]{color:var(--accent);border-top-color:var(--
 .empty{padding:28px 12px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px}
 
 /* 工事種別の選択 */
-.types{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.types button{border:2px solid var(--line);background:var(--surface);border-radius:12px;padding:18px 10px;font-family:var(--font-display);font-weight:700;font-size:18px;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:96px}
-.types button small{font-family:var(--font-body);font-weight:400;font-size:12px;color:var(--muted)}
-.types button[aria-pressed="true"]{border-color:var(--accent);background:var(--tip);color:var(--accent)}
-.types button[aria-pressed="true"]::before{content:"✓ "}
 
 /* 調査シート */
 .sheet-head{display:flex;align-items:center;gap:10px;padding:4px 2px}
@@ -179,6 +175,50 @@ pre.report{white-space:pre-wrap;word-break:break-word;background:var(--surface2)
 .gloss span{color:var(--muted)}
 .fig{color:var(--fg);background:var(--surface2);border-radius:8px;padding:8px;margin-bottom:10px}
 .fig svg{display:block;width:100%;max-width:420px;height:auto;margin:0 auto}
+
+/* ---- トップ画面 ---- */
+header.bar.home{display:none}
+.hero{position:relative;overflow:hidden;color:#fff;border-radius:0 0 22px 22px;margin:-14px calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0 calc(-1 * max(16px,env(safe-area-inset-right,0px)));
+  padding:calc(18px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) 22px max(20px,env(safe-area-inset-left,0px));
+  background:
+    linear-gradient(180deg,rgba(15,26,42,.15) 0%,rgba(15,26,42,.55) 55%,rgba(15,26,42,.92) 100%),
+    url("hero.jpg") center/cover no-repeat,
+    radial-gradient(120% 80% at 85% 0%,#e8a04a 0%,#b85c3a 28%,transparent 60%),
+    radial-gradient(90% 70% at 10% 100%,#1f3a5f 0%,transparent 60%),
+    var(--hero);
+  min-height:250px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px}
+.hero .sky{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.hero > *:not(.sky){position:relative}
+.hero .eyebrow{font-size:12px;letter-spacing:.14em;opacity:.85}
+.hero h2{font-size:34px;line-height:1.1;letter-spacing:.02em}
+.hero p{margin:0;font-size:13.5px;opacity:.9;max-width:34em}
+.hero .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.hero .meta span{font-size:12px;padding:4px 10px;border:1px solid rgba(255,255,255,.35);border-radius:999px;backdrop-filter:blur(4px)}
+.hero .cta{margin-top:10px;background:var(--sun);color:var(--sun-fg);border:0;border-radius:12px;padding:15px 18px;font-size:16px;font-weight:700;font-family:var(--font-display);display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.hero .cta::after{content:"→";font-size:20px}
+.secttl{display:flex;align-items:baseline;gap:8px;margin-top:4px}
+.secttl h3{font-size:15px}
+.secttl .cnt{font-size:12px;color:var(--muted)}
+.slist{display:flex;flex-direction:column;gap:8px}
+.scard{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:14px;text-align:left;width:100%}
+.scard .ring{width:44px;height:44px}
+.scard .ring text{font-size:11px;font-weight:700;fill:var(--fg);font-variant-numeric:tabular-nums}
+.scard .t{min-width:0}
+.scard .t b{display:block;font-family:var(--font-display);font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scard .t span{font-size:12px;color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scard .go{color:var(--muted);font-size:18px}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.types button{border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:14px 12px;font-family:var(--font-display);font-weight:700;font-size:16px;display:grid;grid-template-columns:40px 1fr;gap:4px 10px;align-items:center;text-align:left;min-height:84px}
+.types button .ic{grid-row:span 2;width:40px;height:40px;border-radius:10px;background:var(--tip);color:var(--accent);display:flex;align-items:center;justify-content:center}
+.types button .ic svg{width:24px;height:24px}
+.types button small{font-family:var(--font-body);font-weight:400;font-size:11.5px;color:var(--muted);line-height:1.3}
+.types button[aria-pressed="true"]{border-color:var(--accent);background:var(--tip);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.types button[aria-pressed="true"] .ic{background:var(--accent);color:var(--accent-fg)}
+.types button[aria-pressed="true"]::before{content:none}
+.homecard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+.homecard summary{cursor:pointer;font-weight:700;font-family:var(--font-display);list-style:none;display:flex;align-items:center;gap:8px}
+.homecard summary::before{content:"▸";color:var(--muted);transition:transform .15s}
+.homecard[open] summary::before{transform:rotate(90deg)}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
 </style>
 </head>
@@ -366,6 +406,22 @@ const COMMON = { name:'どの工事でも',
   see:[ ['工事の車を停められる場所はあるか',''], ['玄関から工事場所までの通り道','幅・曲がり角・階段。大きな物が運べるか'] ],
   measure:[], shots:[], ask:[],
 };
+
+/* 工事種別のアイコン（線画） */
+const ICONS = {
+  toilet:'<path d="M7 3h8v7H7z"/><path d="M5 10h14v2a7 7 0 0 1-14 0z"/><path d="M9 21h6l-1-3H10z"/>',
+  bath:'<path d="M3 12h18v3a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5z"/><path d="M6 12V6a2 2 0 0 1 4 0"/><path d="M6 20l-1 2M18 20l1 2"/>',
+  wash:'<path d="M4 10h16v2a8 8 0 0 1-16 0z"/><path d="M12 10V5M9 5h6"/><path d="M8 20h8M12 18v2"/>',
+  kitchen:'<path d="M3 11h18v9H3z"/><path d="M3 15h18M8 11V8h4v3"/><path d="M14 6h5v3h-5z"/>',
+  door:'<path d="M6 3h12v18H6z"/><path d="M15 12v1"/><path d="M3 21h18"/>',
+  floor:'<path d="M3 6h18M3 11h18M3 16h18M3 21h18"/><path d="M9 6v5M15 11v5M9 16v5"/>',
+  cloth:'<path d="M4 4h16v16H4z"/><path d="M9 4v16M14 4v16"/><path d="M4 9h5M9 14h5M14 9h6"/>',
+  exterior:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M9 20v-5h6v5"/>',
+  leak:'<path d="M7 14a4 4 0 0 1 .5-8 5 5 0 0 1 9.5 1 3 3 0 0 1 0 7H7z"/><path d="M12 16l-1.6 2.6a1.8 1.8 0 0 0 3.2 0z"/>',
+};
+const icon=t=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[t]||''}</svg>`;
+const SKY=`<svg class="sky" viewBox="0 0 400 250" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><g fill="none" stroke="rgba(255,255,255,.28)" stroke-width="1.2"><path d="M-10 236 H420"/><path d="M0 236 V186 L34 160 L68 186 V236"/><path d="M62 236 V172 L110 140 L158 172 V236"/><path d="M150 236 V190 L184 164 L218 190 V236"/><path d="M226 236 V150 H262 V236"/><path d="M262 236 V170 L300 146 L338 170 V236"/><path d="M340 236 V196 L370 176 L400 196 V236"/><path d="M118 140 V124 H128 V134"/><path d="M90 200 h12 v14 h-12z M20 206 h10 v10 h-10z M276 192 h12 v12 h-12z M236 170 h14 v10 h-14z M312 190 h10 v10 h-10z"/></g><g fill="rgba(255,255,255,.18)"><circle cx="330" cy="46" r="16"/></g></svg>`;
+
 /* 分からない言葉 */
 const GLOSSARY = [
   ['現調（げんちょう）','現地調査の略。お客様の家に行って、工事に必要なことを見て・測って・聞くこと'],
@@ -459,7 +515,7 @@ const TABS=[['sheet','調査シート'],['customer','お客様情報'],['summary
 function setTitle(){ const s=state.cur; const t=typeNames(s).join('・'); const c=s.customer.name; titleEl.innerHTML=esc(t||'新規調査')+' <span class="sub">'+esc(c?c+' 様':s.customer.date)+'</span>'; }
 function render(){
   if(!state.cur){ renderHome(); return; }
-  backBtn.hidden=false; setTitle();
+  $('header.bar').classList.remove('home'); backBtn.hidden=false; setTitle();
   const needPick=!(state.cur.types||[]).length || state.pick;
   tabs.hidden=needPick;
   if(needPick){ renderPick(); $('main').scrollTop=0; return; }
@@ -470,16 +526,25 @@ function render(){
 
 function bossMail(){ try{ return localStorage.getItem('bossMail')||''; }catch(e){ return ''; } }
 function renderHome(){
-  backBtn.hidden=true; tabs.hidden=true;
+  backBtn.hidden=true; tabs.hidden=true; $('header.bar').classList.add('home');
   titleEl.innerHTML='現地調査ナビ <span class="sub">株式会社ワイケイアート</span>'; saveState.textContent='';
   const list=[...state.surveys].sort((a,b)=>b.updatedAt-a.updatedAt);
+  const d=new Date(); const dateStr=`${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）`;
+  const todays=list.filter(s=>s.customer.date===today()).length;
+  const ring=p=>{ const r=16, c=2*Math.PI*r; return `<svg class="ring" viewBox="0 0 44 44"><circle cx="22" cy="22" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="5"/><circle cx="22" cy="22" r="${r}" fill="none" stroke="${p>=100?'var(--ok)':'var(--accent)'}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${c*p/100} ${c}" transform="rotate(-90 22 22)"/><text x="22" y="26" text-anchor="middle">${p}</text></svg>`; };
   view.innerHTML=`
-  <div class="home-hero"><h2>今日の現地調査</h2><p class="muted">工事の種類を選ぶと、その工事で「見る・測る・写真・聞く」ことが出ます。上から順に埋めるだけです。データはこの端末の中に保存されます。</p></div>
-  <button class="btn primary block" id="newBtn">＋ 新しい調査を始める</button>
-  ${list.length?`<div class="list">${list.map(s=>{const p=progress(s); return `<button class="item" data-open="${s.id}"><div class="t"><b>${esc(typeNames(s).join('・')||'種類未選択')}　${esc(s.customer.name?s.customer.name+' 様':'')}</b><span>${esc(s.customer.date)}　${esc(s.customer.address||'')}</span></div><span class="pill ${p>=100?'ok':''}">${p}%</span></button>`}).join('')}</div>`:`<div class="empty">まだ調査データがありません。<br>上のボタンから始めてください。</div>`}
-  <details class="card"><summary style="cursor:pointer;font-weight:700;font-family:var(--font-display)">出発前の持ち物チェック</summary>
+  <section class="hero">${SKY}
+    <div class="eyebrow">YK ART ／ 株式会社ワイケイアート</div>
+    <h2>現地調査ナビ</h2>
+    <p>工事の種類を選ぶと、その工事で「見る・測る・写真・聞く」ことが出ます。上から順に埋めるだけ。</p>
+    <div class="meta"><span>${dateStr}</span><span>今日の調査 ${todays}件</span><span>データは端末内に保存</span></div>
+    <button class="cta" id="newBtn">新しい調査を始める</button>
+  </section>
+  <div class="secttl"><h3>調査データ</h3><span class="cnt">${list.length}件</span></div>
+  ${list.length?`<div class="slist">${list.map(s=>{const p=progress(s); return `<button class="scard" data-open="${s.id}">${ring(p)}<div class="t"><b>${esc(typeNames(s).join('・')||'種類未選択')}${s.customer.name?`　${esc(s.customer.name)} 様`:''}</b><span>${esc(s.customer.date)}${s.customer.address?'　'+esc(s.customer.address):''}</span></div><span class="go">›</span></button>`}).join('')}</div>`:`<div class="empty">まだ調査データがありません。<br>上のボタンから始めてください。</div>`}
+  <details class="homecard"><summary>出発前の持ち物チェック</summary>
     <div class="kit" style="margin-top:10px">${KIT.map((k,i)=>`<label><input type="checkbox" data-kit="${i}" ${state.kit[i]?'checked':''}>${esc(k)}</label>`).join('')}</div></details>
-  <details class="card"><summary style="cursor:pointer;font-weight:700;font-family:var(--font-display)">設定・データの取り込み</summary>
+  <details class="homecard"><summary>設定・データの取り込み</summary>
     <div class="field" style="margin-top:10px"><label for="bossMail">上司の送り先（メールアドレス）</label><input id="bossMail" type="email" value="${esc(bossMail())}" placeholder="例：boss@ykart.jp"><span class="muted">「上司に報告する」でスマホの共有が使えない時に、このアドレス宛のメールを作ります。</span></div>
     <p class="muted" style="margin:12px 0 6px">まとめ画面で書き出したZIP（写真つき）を、別の端末やPCで読み込めます。</p>
     <label class="btn sm">ZIP / JSON を読み込む<input type="file" id="importFile" accept=".zip,.json,application/zip,application/json" hidden></label></details>`;
@@ -495,7 +560,7 @@ function renderPick(){
   const s=state.cur; const sel=state.pick ?? [...(s.types||[])]; state.pick=sel;
   view.innerHTML=`
   <div class="home-hero"><h2>今日は何の工事ですか？</h2><p class="muted">当てはまるものを選んでください（複数OK）。</p></div>
-  <div class="types">${TYPE_ORDER.map(t=>`<button data-type="${t}" aria-pressed="${sel.includes(t)}">${esc(TYPES[t].name)}<small>${esc(TYPES[t].days)}</small></button>`).join('')}</div>
+  <div class="types">${TYPE_ORDER.map(t=>`<button data-type="${t}" aria-pressed="${sel.includes(t)}"><span class="ic">${icon(t)}</span><span>${esc(TYPES[t].name)}</span><small>${esc(TYPES[t].days)}</small></button>`).join('')}</div>
   <button class="btn primary block" id="pickOk" ${sel.length?'':'disabled'}>${sel.length?`${sel.map(t=>TYPES[t].name).join('・')} の調査シートを開く →`:'種類を選んでください'}</button>
   ${(s.types||[]).length?`<button class="btn block" id="pickCancel">変更しない</button>`:''}`;
   view.querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>{ const t=b.dataset.type; const i=sel.indexOf(t); if(i>=0) sel.splice(i,1); else sel.push(t); sel.sort((a,b)=>TYPE_ORDER.indexOf(a)-TYPE_ORDER.indexOf(b)); renderPick(); });
