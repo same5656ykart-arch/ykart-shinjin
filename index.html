@@ -255,7 +255,7 @@ const TYPE_ORDER=['toilet','bath','wash','kitchen','door','floor','cloth','exter
 const COMMON = { name:'どの工事でも',
   see:[ ['工事車両を停める場所',''], ['搬入経路','幅・曲がり角・階段'] ],
   measure:[], shots:[],
-  ask:[ ['ご近所で挨拶が必要なお宅は？',''] ],
+  ask:[],
 };
 function blocks(s){ return [...(s.types||[]).map(t=>({key:t, ...TYPES[t]})), {key:'common', ...COMMON}]; }
 const KIT = ['メジャー(5.5m)','レーザー距離計','スマホ(充電OK)','懐中電灯','脚立','マスキングテープ','筆記用具','名刺','カタログ','スリッパ','養生シート','マスク・手袋'];
