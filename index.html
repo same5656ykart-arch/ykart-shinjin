@@ -158,6 +158,12 @@ pre.report{white-space:pre-wrap;word-break:break-word;background:var(--surface2)
 .case:last-child{border-bottom:0}
 .case b{font-family:var(--font-display);color:var(--accent);grid-row:span 2}
 .case .where{color:var(--muted)}
+.calc-t{width:100%;border-collapse:collapse;margin-top:6px;font-variant-numeric:tabular-nums}
+.calc-t th{font-size:11px;color:var(--muted);font-weight:400;text-align:right;padding:2px 4px}
+.calc-t th:first-child{text-align:left}
+.calc-t td{padding:4px;border-top:1px solid var(--tip-line)}
+.calc-t td.num{text-align:right;white-space:nowrap}
+.calc-t small{color:var(--muted);font-size:11px}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
 </style>
 </head>
@@ -211,10 +217,12 @@ const TYPES = {
     shots:[ ['部屋 全体',''], ['傷んでいる所','近くで'], ['段差・敷居',''] ],
     ask:[ ['一番困っていることは？',''], ['上張り（段差ができる）でもいい？',''], ['家具の移動は誰がする？',''], ['予算の目安と、いつまでに？',''] ]},
   cloth:{ name:'クロス張り替え', days:'1部屋 1日',
-    see:[ ['今の壁はクロスか、それ以外か','よく見ると塗装か。プリントされた化粧板か'], ['和室の砂壁・天井板ではないか','薄いベニヤを貼らないとクロスが貼れない'], ['剥がれ・浮き・カビ、下地のひび・穴',''], ['荷物はないか',''], ['養生は必要か',''] ],
+    see:[ ['今の壁はクロスか、それ以外か','よく見ると塗装か。プリントされた化粧板か'], ['和室の砂壁・天井板ではないか','薄いベニヤを貼らないとクロスが貼れない'], ['剥がれ・浮き・カビ、下地のひび・穴',''], ['荷物はないか',''], ['養生は必要か',''], ['在宅か 空き家か','立ち会い・鍵'] ],
     measure:[ ['部屋 幅','mm',''], ['部屋 奥行','mm',''], ['天井高','mm',''] ],
+    calcNote:'縦横で測ったのが実平米。クロスは端材が出るので、実平米 × 1.3 が提示平米数。',
+    calc:d=>{ const W=+d[0]||0, D=+d[1]||0, H=+d[2]||0; if(!(W&&D&&H)) return null; return [['壁（4面）', 2*(W+D)*H/1e6, 1.3], ['天井', W*D/1e6, 1.3]]; },
     shots:[ ['部屋 全体','荷物の量も分かるように'], ['壁の表面','近くで'], ['傷んでいる所',''], ['天井','溝があるか'] ],
-    ask:[ ['在宅か 空き家か','立ち会い・鍵'], ['荷物の移動は誰がする？',''], ['部屋数と、天井も替える？',''], ['予算の目安と、いつまでに？',''] ],
+    ask:[ ['色柄はワイケイで提案する？カタログを持ってくる？',''], ['荷物の移動は誰がする？',''], ['部屋数と、天井も替える？',''], ['予算の目安と、いつまでに？',''] ],
     cases:{ title:'クロスが貼れる壁か、見分け方', prefix:'対処：', rows:[
       ['クロス','継ぎ目がある。端が少しめくれる','そのまま張り替えOK'],
       ['塗装','継ぎ目がなく、表面がツルッと塗られている','下地処理が必要'],
@@ -345,6 +353,8 @@ function renderPick(){
 }
 
 /* 調査シート：種類ごとに 見る → 測る → 写真 → 聞く */
+function calcRows(b,s){ if(!b.calc) return null; return b.calc(b.measure.map((_,i)=>s.dims[key(b.key,'measure',i)])); }
+function calcHtml(b,s){ const rows=calcRows(b,s); return `<div class="tip" style="margin-top:8px">${b.calcNote?`<b>${esc(b.calcNote)}</b>`:''}${rows?`<table class="calc-t"><tr><th></th><th>実平米</th><th>提示平米</th></tr>${rows.map(([n,a,k])=>`<tr><td>${esc(n)}</td><td class="num">${a.toFixed(1)} ㎡</td><td class="num"><b>${(a*k).toFixed(1)} ㎡</b><small>（×${k}）</small></td></tr>`).join('')}</table>`:'<span class="muted">幅・奥行・天井高を入れると自動計算します</span>'}</div>`; }
 function renderSheet(){
   const s=state.cur;
   const sec=(b,kind,no,title,inner,cnt)=>`<div class="card sec" id="${b.key}-${kind}"><h2><span class="no">${no}</span>${title} <span class="cnt ${cnt[0]===cnt[1]?'ok':''}">${cnt[0]}/${cnt[1]}</span></h2>${inner}</div>`;
@@ -358,7 +368,7 @@ function renderSheet(){
     return `<div class="sheet-head"><h2>${esc(b.name)}</h2>${b.days?`<span class="pill">${esc(b.days)}</span>`:''}</div>${alert}
       ${b.key!=='common'?`<div class="jump"><button data-jump="${b.key}-see">見る ${c.see[0]}/${c.see[1]}</button><button data-jump="${b.key}-measure">測る ${c.measure[0]}/${c.measure[1]}</button><button data-jump="${b.key}-shots">写真 ${c.shots[0]}/${c.shots[1]}</button><button data-jump="${b.key}-ask">聞く ${c.ask[0]}/${c.ask[1]}</button></div>`:''}
       ${sec(b,'see','1','見る',see,c.see)}${cases}
-      ${b.measure.length?sec(b,'measure','2','測る',`<div class="tip" style="margin-bottom:8px">単位は mm。分からない所は空欄のまま、写真を撮って先輩に聞く。</div>`+measure,c.measure):''}
+      ${b.measure.length?sec(b,'measure','2','測る',`<div class="tip" style="margin-bottom:8px">単位は mm。分からない所は空欄のまま、写真を撮って先輩に聞く。</div>`+measure+(b.calc?`<div id="${b.key}-calc">${calcHtml(b,s)}</div>`:''),c.measure):''}
       ${b.shots.length?sec(b,'shots','3','写真を撮る',shots,c.shots):''}
       ${b.ask.length?sec(b,'ask','4','聞く',ask,c.ask):''}`; }).join('');
   view.innerHTML=`${html}
@@ -371,7 +381,7 @@ function renderSheet(){
   view.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>$('#'+b.dataset.jump)?.scrollIntoView({behavior:'smooth',block:'start'}));
   view.querySelectorAll('[data-see]').forEach(c=>c.onchange=()=>{ const k=c.dataset.see; s.see[k]={...(s.see[k]||{}),done:c.checked}; c.closest('.chk')?.classList.toggle('done',c.checked); refreshCounts(); save(); });
   view.querySelectorAll('[data-seememo]').forEach(i=>i.oninput=()=>{ const k=i.dataset.seememo; s.see[k]={...(s.see[k]||{}),memo:i.value}; save(); });
-  view.querySelectorAll('[data-dim]').forEach(i=>i.oninput=()=>{ s.dims[i.dataset.dim]=i.value; i.closest('.dim').classList.toggle('done',!!i.value.trim()); refreshCounts(); save(); });
+  view.querySelectorAll('[data-dim]').forEach(i=>i.oninput=()=>{ s.dims[i.dataset.dim]=i.value; i.closest('.dim').classList.toggle('done',!!i.value.trim()); refreshCounts(); save(); const bk=i.dataset.dim.split('.')[0]; const b=blocks(s).find(x=>x.key===bk); const el=$('#'+bk+'-calc'); if(b&&el) el.innerHTML=calcHtml(b,s); });
   view.querySelectorAll('[data-ask]').forEach(i=>i.oninput=()=>{ s.answers[i.dataset.ask]=i.value; refreshCounts(); save(); });
   view.querySelectorAll('[data-shot]').forEach(i=>i.onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ s.shots[i.dataset.shot]={data:await shrink(f),at:Date.now()}; await save(true); toast('保存しました'); }catch(err){ toast('保存できませんでした（容量不足の可能性）'); } renderSheet(); setTimeout(()=>$('#'+i.dataset.shot.split('.').slice(0,2).join('-'))?.scrollIntoView({block:'start'}),0); });
   view.querySelectorAll('[data-delshot]').forEach(b=>b.onclick=()=>{ delete s.shots[b.dataset.delshot]; save(); renderSheet(); setTimeout(()=>$('#'+b.dataset.delshot.split('.').slice(0,2).join('-'))?.scrollIntoView({block:'start'}),0); });
@@ -416,6 +426,7 @@ function report(s){
     const notes=seen.filter(x=>x.v.memo).map(x=>`・${x.lab}：${x.v.memo}`); const unseen=seen.filter(x=>!x.v.done).map(x=>x.lab);
     L.push(`[見た] ${seen.length-unseen.length}/${seen.length}`,...notes); if(unseen.length) L.push(`　未確認：${unseen.join('、')}`);
     if(b.measure.length){ L.push(`[採寸]`); b.measure.forEach(([lab,unit],i)=>{ const v=s.dims[key(b.key,'measure',i)]; L.push(`・${lab}：${String(v??'').trim()?v+(unit?' '+unit:''):'未'}`); }); }
+    const cr=calcRows(b,s); if(cr) cr.forEach(([n,a,k])=>L.push(`・${n}：実平米 ${a.toFixed(1)}㎡ → 提示 ${(a*k).toFixed(1)}㎡（×${k}）`));
     const taken=b.shots.filter((_,i)=>s.shots[key(b.key,'shots',i)]).length; const notTaken=b.shots.filter((_,i)=>!s.shots[key(b.key,'shots',i)]).map(x=>x[0]);
     if(b.shots.length) L.push(`[写真] ${taken}/${b.shots.length}${notTaken.length?'　未撮影：'+notTaken.join('、'):''}`);
     if(b.ask.length) L.push(`[聞いた]`); b.ask.forEach(([q],i)=>{ const a=s.answers[key(b.key,'ask',i)]; L.push(`・${q} → ${String(a??'').trim()?a:'未'}`); });
