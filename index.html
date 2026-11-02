@@ -154,7 +154,7 @@ pre.report{white-space:pre-wrap;word-break:break-word;background:var(--surface2)
 .alert li input{width:26px;height:26px;margin:0;accent-color:var(--bad);flex:0 0 auto}
 .alert li .n{color:var(--bad);font-family:var(--font-display)}
 .cases{display:flex;flex-direction:column;gap:8px}
-.case{display:grid;grid-template-columns:72px 1fr;gap:4px 10px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.case{display:grid;grid-template-columns:minmax(72px,30%) 1fr;gap:4px 10px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
 .case:last-child{border-bottom:0}
 .case b{font-family:var(--font-display);color:var(--accent);grid-row:span 2}
 .case .where{color:var(--muted)}
@@ -231,10 +231,25 @@ const TYPES = {
       ['天井板','和室の天井。板に溝がある','薄いベニヤを貼ってからクロス'],
     ]}},
   exterior:{ name:'外壁塗装', days:'2〜3週間・足場あり',
-    see:[ ['外壁の種類','サイディング/モルタル/ALC'], ['チョーキング','手で触って白い粉'], ['ひび・コーキングの割れ',''], ['足場が立つスペース・隣家との距離',''] ],
-    measure:[ ['建物の外周（各面の幅）','','例：南10.9 東7.2 北10.9 西7.2'], ['軒の高さ','mm',''], ['隣家との距離（一番狭い所）','mm',''] ],
-    shots:[ ['4方向の全景','正面・左・右・裏'], ['ひび・剥がれ','近くで'], ['コーキング',''], ['足場スペース',''] ],
-    ask:[ ['一番困っていることは？',''], ['前に塗ったのはいつ？',''], ['屋根も一緒に塗る？',''], ['予算の目安と、いつまでに？',''] ]},
+    intro:[
+      { title:'外壁の種類', prefix:'塗装のポイント：', rows:[
+        ['窯業系サイディング','板を貼り合わせた継ぎ目（目地）にコーキング。レンガ調・石目調など柄付き。一番多い','コーキングの打ち替えが必要'],
+        ['金属サイディング','軽くて、叩くと金属音。継ぎ目が細い','サビ止めが必要'],
+        ['モルタル','継ぎ目がない。ザラザラや吹付けの模様','ひび（クラック）の補修が必要'],
+        ['ALC','厚い板で目地が深い。鉄骨の家やマンションに多い','目地の補修と防水性の高い塗料'],
+        ['タイル','焼き物。基本は塗らない','洗浄と目地・コーキングの補修'],
+      ]},
+      { title:'屋根の種類', prefix:'塗装のポイント：', rows:[
+        ['瓦（和瓦）','波型の焼き物。黒や銀色','塗装しない'],
+        ['セメント瓦・洋瓦','瓦の形だが表面がザラザラ。色あせしている','塗装する'],
+        ['スレート（コロニアル）','薄くて平らな板を重ねている。一番多い','塗装OK。縁切り（タスペーサー）が必要'],
+        ['金属（ガルバリウム・トタン）','平らで継ぎ目がある。叩くと金属音','サビ止めの上に塗装'],
+      ]},
+    ],
+    see:[ ['外壁の種類','上の表で確認'], ['屋根の種類','地上から見える範囲。登らない'], ['建物周り','隣家との距離・足場が立つスペース・邪魔になる物（カーポート・植栽・室外機）'], ['外壁の傷み','ひび・コーキングの割れ・チョーキング（触って白い粉）'] ],
+    measure:[ ['外周（各面の幅）','','例：南10.9 東7.2 北10.9 西7.2'], ['高さ（地面から軒まで）','mm',''] ],
+    shots:[ ['4方向の全景','正面・左・右・裏'], ['外壁の近く','種類が分かるように'], ['屋根','見える範囲'], ['建物周り','足場スペースと邪魔になる物'] ],
+    ask:[ ['塗装の動機は？',''], ['前に塗ったのはいつ？',''], ['屋根も一緒に塗る？',''], ['予算の目安は？',''] ]},
   leak:{ name:'雨漏れ', days:'原因調査のあと見積り',
     alert:{ title:'持ち物を確認', items:['脚立','デジカメ','デジカメのスマホアプリ（写真の転送用）','延長三脚（高い所・屋根の撮影用）'] },
     see:[ ['漏れている場所は 1Fか 2Fか（最上階か）','最上階なら屋根、1Fなら上の階・ベランダ・外壁を疑う'], ['真上は何か：屋根 / ベランダ / 上の階の部屋',''], ['外壁まわり：ひび・コーキング切れ・配管の隙間','シミの真上の外壁を外から見る'], ['窓まわりの下か：サッシ上のコーキング・枠の隙間',''], ['雨樋の詰まり・外れ',''] ],
@@ -364,10 +379,11 @@ function renderSheet(){
     const shots=b.shots.map(([lab,hint],i)=>{ const k=key(b.key,'shots',i); const p=s.shots[k]; return `<div class="shot ${p?'done':''}"><div class="th">${p?`<img src="${p.data}" alt="">`:'未'}</div><div class="lb">${esc(lab)}${hint?`<small>${esc(hint)}</small>`:''}</div><div class="ops"><label class="btn sm ${p?'':'primary'}">${p?'撮り直す':'📷 撮る'}<input type="file" accept="image/*" capture="environment" data-shot="${k}"></label>${p?`<button class="btn sm danger" data-delshot="${k}">×</button>`:''}</div></div>`; }).join('');
     const ask=b.ask.map(([q,hint],i)=>{ const k=key(b.key,'ask',i); return `<div class="ask"><label for="a_${k}">${esc(q)}${hint?`<small>${esc(hint)}</small>`:''}</label><input id="a_${k}" data-ask="${k}" value="${esc(s.answers[k]||'')}" placeholder="お客様の言葉をそのままメモ"></div>`; }).join('');
     const alert=b.alert?`<div class="alert"><h2>⚠ 注意：${esc(b.alert.title)}</h2><ol>${b.alert.items.map((it,i)=>{ const k=key(b.key,'gear',i); const on=s.see[k]?.done; return `<li><label><input type="checkbox" data-see="${k}" ${on?'checked':''}><span class="n">${'①②③④⑤⑥'[i]||i+1}</span>${esc(it)}</label></li>`; }).join('')}</ol></div>`:'';
+    const introHtml=(b.intro||[]).map(g=>`<div class="card"><h2>${esc(g.title)}</h2><div class="cases">${g.rows.map(([pl,how,note])=>`<div class="case"><b>${esc(pl)}</b><span>${esc(how)}</span><span class="where">→ ${esc(g.prefix)}${esc(note)}</span></div>`).join('')}</div></div>`).join('');
     const cases=b.cases?`<div class="card"><h2>${esc(b.cases.title)} <span class="cnt">お客様への説明にも</span></h2><div class="cases">${b.cases.rows.map(([pl,cause,where])=>`<div class="case"><b>${esc(pl)}</b><span>${esc(cause)}</span><span class="where">→ ${esc(b.cases.prefix)}${esc(where)}</span></div>`).join('')}</div></div>`:'';
     return `<div class="sheet-head"><h2>${esc(b.name)}</h2>${b.days?`<span class="pill">${esc(b.days)}</span>`:''}</div>${alert}
       ${b.key!=='common'?`<div class="jump"><button data-jump="${b.key}-see">見る ${c.see[0]}/${c.see[1]}</button><button data-jump="${b.key}-measure">測る ${c.measure[0]}/${c.measure[1]}</button><button data-jump="${b.key}-shots">写真 ${c.shots[0]}/${c.shots[1]}</button><button data-jump="${b.key}-ask">聞く ${c.ask[0]}/${c.ask[1]}</button></div>`:''}
-      ${sec(b,'see','1','見る',see,c.see)}${cases}
+      ${introHtml}${sec(b,'see','1','見る',see,c.see)}${cases}
       ${b.measure.length?sec(b,'measure','2','測る',`<div class="tip" style="margin-bottom:8px">単位は mm。分からない所は空欄のまま、写真を撮って先輩に聞く。</div>`+measure+(b.calc?`<div id="${b.key}-calc">${calcHtml(b,s)}</div>`:''),c.measure):''}
       ${b.shots.length?sec(b,'shots','3','写真を撮る',shots,c.shots):''}
       ${b.ask.length?sec(b,'ask','4','聞く',ask,c.ask):''}`; }).join('');
