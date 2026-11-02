@@ -156,6 +156,10 @@ pre.report{white-space:pre-wrap;word-break:break-word;background:var(--surface2)
 .cases{display:flex;flex-direction:column;gap:8px}
 .case{display:grid;grid-template-columns:minmax(72px,30%) 1fr;gap:4px 10px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
 .case:last-child{border-bottom:0}
+.case.pick{grid-template-columns:28px minmax(64px,28%) 1fr;cursor:pointer;border-radius:8px;padding:8px 6px}
+.case.pick input{width:22px;height:22px;margin:2px 0 0;grid-row:span 2;accent-color:var(--accent)}
+.case.pick.sel{background:var(--tip);border-bottom-color:transparent}
+.case.pick.sel b{color:var(--accent)}
 .case b{font-family:var(--font-display);color:var(--accent);grid-row:span 2}
 .case .where{color:var(--muted)}
 .calc-t{width:100%;border-collapse:collapse;margin-top:6px;font-variant-numeric:tabular-nums}
@@ -246,7 +250,7 @@ const TYPES = {
         ['金属（ガルバリウム・トタン）','平らで継ぎ目がある。叩くと金属音','サビ止めの上に塗装'],
       ]},
     ],
-    see:[ ['外壁の種類','上の表で確認'], ['屋根の種類','地上から見える範囲。登らない'], ['建物周り','隣家との距離・足場が立つスペース・邪魔になる物（カーポート・植栽・室外機）'], ['外壁の傷み','ひび・コーキングの割れ・チョーキング（触って白い粉）'] ],
+    see:[ ['建物周り','隣家との距離・足場が立つスペース・邪魔になる物（カーポート・植栽・室外機）'], ['外壁の傷み','ひび・コーキングの割れ・チョーキング（触って白い粉）'] ],
     measure:[ ['外周（各面の幅）','','例：南10.9 東7.2 北10.9 西7.2'], ['高さ（地面から軒まで）','mm',''] ],
     shots:[ ['4方向の全景','正面・左・右・裏'], ['外壁の近く','種類が分かるように'], ['屋根','見える範囲'], ['建物周り','足場スペースと邪魔になる物'] ],
     ask:[ ['塗装の動機は？',''], ['前に塗ったのはいつ？',''], ['屋根も一緒に塗る？',''], ['予算の目安は？',''] ]},
@@ -308,7 +312,7 @@ function save(immediate){
 document.addEventListener('visibilitychange',()=>{ if(document.hidden&&state.cur){ clearTimeout(saveTimer); DB.put(state.cur).catch(()=>{}); } });
 
 /* ========= 進捗・不足 ========= */
-function counts(s,b){ const c={see:[0,b.see.length],measure:[0,b.measure.length],shots:[0,b.shots.length],ask:[0,b.ask.length]};
+function counts(s,b){ const intro=b.intro||[]; const c={see:[intro.filter((_,i)=>s.answers[key(b.key,'intro',i)]).length,b.see.length+intro.length],measure:[0,b.measure.length],shots:[0,b.shots.length],ask:[0,b.ask.length]};
   b.see.forEach((_,i)=>{ if(s.see[key(b.key,'see',i)]?.done) c.see[0]++; });
   b.measure.forEach((_,i)=>{ if(String(s.dims[key(b.key,'measure',i)]??'').trim()) c.measure[0]++; });
   b.shots.forEach((_,i)=>{ if(s.shots[key(b.key,'shots',i)]) c.shots[0]++; });
@@ -379,7 +383,7 @@ function renderSheet(){
     const shots=b.shots.map(([lab,hint],i)=>{ const k=key(b.key,'shots',i); const p=s.shots[k]; return `<div class="shot ${p?'done':''}"><div class="th">${p?`<img src="${p.data}" alt="">`:'未'}</div><div class="lb">${esc(lab)}${hint?`<small>${esc(hint)}</small>`:''}</div><div class="ops"><label class="btn sm ${p?'':'primary'}">${p?'撮り直す':'📷 撮る'}<input type="file" accept="image/*" capture="environment" data-shot="${k}"></label>${p?`<button class="btn sm danger" data-delshot="${k}">×</button>`:''}</div></div>`; }).join('');
     const ask=b.ask.map(([q,hint],i)=>{ const k=key(b.key,'ask',i); return `<div class="ask"><label for="a_${k}">${esc(q)}${hint?`<small>${esc(hint)}</small>`:''}</label><input id="a_${k}" data-ask="${k}" value="${esc(s.answers[k]||'')}" placeholder="お客様の言葉をそのままメモ"></div>`; }).join('');
     const alert=b.alert?`<div class="alert"><h2>⚠ 注意：${esc(b.alert.title)}</h2><ol>${b.alert.items.map((it,i)=>{ const k=key(b.key,'gear',i); const on=s.see[k]?.done; return `<li><label><input type="checkbox" data-see="${k}" ${on?'checked':''}><span class="n">${'①②③④⑤⑥'[i]||i+1}</span>${esc(it)}</label></li>`; }).join('')}</ol></div>`:'';
-    const introHtml=(b.intro||[]).map(g=>`<div class="card"><h2>${esc(g.title)}</h2><div class="cases">${g.rows.map(([pl,how,note])=>`<div class="case"><b>${esc(pl)}</b><span>${esc(how)}</span><span class="where">→ ${esc(g.prefix)}${esc(note)}</span></div>`).join('')}</div></div>`).join('');
+    const introHtml=(b.intro||[]).map((g,gi)=>{ const k=key(b.key,'intro',gi); const cur=s.answers[k]||''; return `<div class="card"><h2>${esc(g.title)} <span class="cnt ${cur?'ok':''}">${cur?'✓ '+esc(cur):'どれか1つ選ぶ'}</span></h2><div class="cases">${g.rows.map(([pl,how,note])=>`<label class="case pick ${cur===pl?'sel':''}"><input type="radio" name="intro_${b.key}_${gi}" data-intro="${k}" value="${esc(pl)}" ${cur===pl?'checked':''}><b>${esc(pl)}</b><span>${esc(how)}</span><span class="where">→ ${esc(g.prefix)}${esc(note)}</span></label>`).join('')}</div></div>`; }).join('');
     const cases=b.cases?`<div class="card"><h2>${esc(b.cases.title)} <span class="cnt">お客様への説明にも</span></h2><div class="cases">${b.cases.rows.map(([pl,cause,where])=>`<div class="case"><b>${esc(pl)}</b><span>${esc(cause)}</span><span class="where">→ ${esc(b.cases.prefix)}${esc(where)}</span></div>`).join('')}</div></div>`:'';
     return `<div class="sheet-head"><h2>${esc(b.name)}</h2>${b.days?`<span class="pill">${esc(b.days)}</span>`:''}</div>${alert}
       ${b.key!=='common'?`<div class="jump"><button data-jump="${b.key}-see">見る ${c.see[0]}/${c.see[1]}</button><button data-jump="${b.key}-measure">測る ${c.measure[0]}/${c.measure[1]}</button><button data-jump="${b.key}-shots">写真 ${c.shots[0]}/${c.shots[1]}</button><button data-jump="${b.key}-ask">聞く ${c.ask[0]}/${c.ask[1]}</button></div>`:''}
@@ -398,6 +402,7 @@ function renderSheet(){
   view.querySelectorAll('[data-see]').forEach(c=>c.onchange=()=>{ const k=c.dataset.see; s.see[k]={...(s.see[k]||{}),done:c.checked}; c.closest('.chk')?.classList.toggle('done',c.checked); refreshCounts(); save(); });
   view.querySelectorAll('[data-seememo]').forEach(i=>i.oninput=()=>{ const k=i.dataset.seememo; s.see[k]={...(s.see[k]||{}),memo:i.value}; save(); });
   view.querySelectorAll('[data-dim]').forEach(i=>i.oninput=()=>{ s.dims[i.dataset.dim]=i.value; i.closest('.dim').classList.toggle('done',!!i.value.trim()); refreshCounts(); save(); const bk=i.dataset.dim.split('.')[0]; const b=blocks(s).find(x=>x.key===bk); const el=$('#'+bk+'-calc'); if(b&&el) el.innerHTML=calcHtml(b,s); });
+  view.querySelectorAll('[data-intro]').forEach(r=>r.onchange=()=>{ s.answers[r.dataset.intro]=r.value; r.closest('.cases').querySelectorAll('.case').forEach(x=>x.classList.toggle('sel',x.contains(r))); const h=r.closest('.card').querySelector('h2 .cnt'); h.textContent='✓ '+r.value; h.classList.add('ok'); refreshCounts(); save(); });
   view.querySelectorAll('[data-ask]').forEach(i=>i.oninput=()=>{ s.answers[i.dataset.ask]=i.value; refreshCounts(); save(); });
   view.querySelectorAll('[data-shot]').forEach(i=>i.onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ s.shots[i.dataset.shot]={data:await shrink(f),at:Date.now()}; await save(true); toast('保存しました'); }catch(err){ toast('保存できませんでした（容量不足の可能性）'); } renderSheet(); setTimeout(()=>$('#'+i.dataset.shot.split('.').slice(0,2).join('-'))?.scrollIntoView({block:'start'}),0); });
   view.querySelectorAll('[data-delshot]').forEach(b=>b.onclick=()=>{ delete s.shots[b.dataset.delshot]; save(); renderSheet(); setTimeout(()=>$('#'+b.dataset.delshot.split('.').slice(0,2).join('-'))?.scrollIntoView({block:'start'}),0); });
@@ -438,6 +443,7 @@ function report(s){
   if(c.note) L.push(`その他：${c.note}`);
   blocks(s).forEach(b=>{
     L.push('',`■${b.name}`);
+    (b.intro||[]).forEach((g,gi)=>L.push(`${g.title}：${s.answers[key(b.key,'intro',gi)]||'未選択'}`));
     const seen=b.see.map(([lab],i)=>{ const v=s.see[key(b.key,'see',i)]||{}; return {lab,v}; });
     const notes=seen.filter(x=>x.v.memo).map(x=>`・${x.lab}：${x.v.memo}`); const unseen=seen.filter(x=>!x.v.done).map(x=>x.lab);
     L.push(`[見た] ${seen.length-unseen.length}/${seen.length}`,...notes); if(unseen.length) L.push(`　未確認：${unseen.join('、')}`);
