@@ -152,6 +152,19 @@ pre.report{white-space:pre-wrap;word-break:break-word;background:var(--surface2)
 .kit label{display:flex;align-items:center;gap:6px;font-size:13.5px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
 .kit input{width:auto;margin:0}
 .empty{padding:28px 12px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px}
+
+/* 工事種別の選択 */
+.types{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.types button{border:2px solid var(--line);background:var(--surface);border-radius:12px;padding:18px 10px;font-family:var(--font-display);font-weight:700;font-size:18px;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:96px}
+.types button small{font-family:var(--font-body);font-weight:400;font-size:12px;color:var(--muted)}
+.types button[aria-pressed="true"]{border-color:var(--accent);background:var(--tip);color:var(--accent)}
+.types button[aria-pressed="true"]::before{content:"✓ "}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{background:var(--accent);color:var(--accent-fg);border-radius:999px;padding:3px 10px;font-size:13px;font-weight:700}
+.wishes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.wishes label{display:flex;align-items:center;gap:6px;font-size:13.5px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.wishes input{width:auto;margin:0}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
 </style>
 </head>
@@ -169,77 +182,122 @@ pre.report{white-space:pre-wrap;word-break:break-word;background:var(--surface2)
 
 <script>
 'use strict';
-/* ========= 調査項目の定義（新人向けガイド付き） ========= */
+/* ========= 工事種別ごとの定義（新人向けガイド付き） ========= */
 const STATUS = [
   {v:'ok', label:'○ 良好'}, {v:'fix', label:'△ 要補修'}, {v:'bad', label:'× 要交換'}, {v:'na', label:'－ 未確認'}
 ];
-const AREAS = [
-  {id:'ext', name:'外部（外壁・屋根まわり）',
-   guide:{do:['建物の周りを一周して、四方向から全景写真を撮る','外壁は手で触って白い粉が付くか確認（チョーキング＝塗替えサイン）','屋根は地上から見える範囲だけ。絶対に登らない','雨漏りの跡（軒天・外壁のシミ）は必ず写真'],
-          say:'「外まわりを一周して写真を撮らせていただいてもよろしいですか？」'},
+const TYPES = {  // 工事の種類を増やすときはここに追加
+  toilet:{ name:'トイレ', short:'トイレ', days:'工事 半日〜2日',
+    hearing:['使う人は誰か（高齢者・お子さま）→ 手すり・段差・ドアの開き方向','掃除で困っていること（便器のフチ裏・床の隙間・臭い）','タンクレスは水圧が低いと設置できない場合がある。2階なら特に確認','紙巻器・収納・手洗いの希望'],
+    say:'「トイレで一番お困りなのは、掃除・臭い・寒さ、どれでしょうか？」',
+    wishes:['タンクレス','温水洗浄便座','別の手洗い器','手すり','床・壁も張替え','ドア交換（引戸）','収納棚','節水型'],
+    area:{id:'t_toilet', name:'トイレ',
+      guide:{do:['型番シールはタンクのフタ裏か便器の側面。必ず接写','排水芯（壁から排水管の中心まで）は後ろ側の床をのぞいて測る。200mmが今の標準','温水洗浄便座を付けたいなら、コンセントとアースの有無が必須','床のふかつきと便器まわりの変色は漏水のサイン'],say:'「便器の後ろ側を少し見させてください。型番と排水の位置を確認します」'},
+      items:[
+        {id:'t_body', name:'便器本体', look:'メーカー・型番・年式（シール）・タンク有無・便座の種類・ぐらつき'},
+        {id:'t_drain', name:'排水', look:'床排水 or 壁排水・排水芯（壁〜排水管中心。200mm標準。それ以外は要注意）'},
+        {id:'t_water', name:'給水', look:'止水栓の位置と種類・給水管の材質・水漏れ跡'},
+        {id:'t_floor', name:'床', look:'材質（CF/タイル/フローリング）・ふかつき・便器まわりの変色・段差'},
+        {id:'t_wall', name:'壁・天井', look:'クロスの状態・腰壁・カビ・天井高'},
+        {id:'t_elec', name:'電気', look:'温水洗浄便座用コンセントの有無・アース・換気扇・照明・スイッチ位置'},
+        {id:'t_hand', name:'手洗い', look:'タンク手洗い or 別手洗い器・水栓・給排水の位置'},
+        {id:'t_door', name:'ドア・窓', look:'開き方向・幅（車椅子なら750以上）・段差・鍵・窓のサイズと結露'},
+        {id:'t_rail', name:'手すり・バリアフリー', look:'手すりの有無・壁の下地の有無・紙巻器の位置'},
+      ]},
+    rooms:[{name:'トイレ 内寸'}],
+    openings:[{place:'トイレ ドア',type:'ドア'},{place:'トイレ 窓',type:'窓'},{place:'排水芯（壁〜排水管中心）',type:'その他',note:'Wに入力'}],
+  },
+  bath:{ name:'浴室', short:'浴室', days:'工事 4〜7日（入浴不可）',
+    hearing:['寒さ・カビ・掃除・またぎの高さ、どれが一番困っているか','浴槽につかる習慣はあるか。足を伸ばしたいか（サイズの希望）','工事中はお風呂に入れない。銭湯やご親族宅の段取りを早めに伝える','将来の介護を考えるか（手すり・引戸・腰掛け）'],
+    say:'「お風呂で一番お困りなのは、寒さ・カビ・掃除・またぎ、どれでしょうか？」',
+    wishes:['ユニットバス化','浴室暖房乾燥機','追焚き機能','手すり','またぎを低く・ベンチ','窓交換・断熱','脱衣所も一緒に','浴槽を大きく','シャワーだけ使いやすく'],
+    area:{id:'t_bath', name:'浴室',
+      guide:{do:['在来（タイル）かユニットバスかを最初に判断。ユニットなら壁に規格サイズの表示（1216・1616など）がある','在来浴室はドア枠の下と脱衣所の床をよく見る。腐れ・シロアリがあると追加工事になる','窓の位置とサイズはユニットバスが入るかを左右する。必ず採寸と写真','浴室暖房乾燥機の希望があれば分電盤の空きと200V回路を確認'],say:'「浴室の寸法と窓のサイズを測らせてください。ユニットバスが入るか確認します」'},
+      items:[
+        {id:'b_type', name:'現状の種類', look:'在来（タイル） or ユニットバス・規格サイズ（1216/1317/1616/1620）・メーカー・年式'},
+        {id:'b_tub', name:'浴槽', look:'素材（FRP/ホーロー/ステンレス）・サイズ・埋込 or 据置・ひび・漏れ'},
+        {id:'b_wallfloor', name:'壁・床', look:'タイルの割れ・目地・カビ・床の滑り・冷たさ'},
+        {id:'b_rot', name:'腐食・シロアリ', look:'在来浴室の壁の下部・ドア枠の下の腐れ・脱衣所の床のふかつき（要注意）'},
+        {id:'b_vent', name:'換気・窓', look:'換気扇の有無と動作・窓のサイズと位置・結露・浴室暖房乾燥機の有無'},
+        {id:'b_faucet', name:'水栓・シャワー', look:'種類・水漏れ・水圧・シャワーフック・混合栓の年式'},
+        {id:'b_drain', name:'排水', look:'排水口の位置・流れ・臭い・洗い場の勾配'},
+        {id:'b_door', name:'出入口', look:'ドアの種類（折戸/開き戸/引戸）・幅・脱衣所との段差・枠の腐れ'},
+        {id:'b_elec', name:'電気', look:'照明・換気扇・浴室暖房用の専用回路（200V）の有無・分電盤の空き'},
+        {id:'b_reheat', name:'追焚き配管', look:'追焚きの有無・給湯器との距離・循環金具の位置'},
+      ]},
+    rooms:[{name:'浴室 内寸'},{name:'脱衣所'}],
+    openings:[{place:'浴室 窓',type:'窓'},{place:'浴室 ドア',type:'ドア'},{place:'脱衣所→浴室 段差',type:'その他',note:'Hに入力'}],
+  },
+  wash:{ name:'洗面化粧台', short:'洗面', days:'工事 半日〜1日',
+    hearing:['朝、同時に使う人数（混雑） → 間口・ミラーの希望','洗濯機の買い替え予定はあるか（サイズが変わると水栓やパンの位置に影響）','収納したい物（ドライヤー・ストック品・タオル）','お掃除や水はねで困っていること'],
+    say:'「洗面所は朝何人くらいで使われますか？収納で困っていることはありますか？」',
+    wishes:['間口を広く','三面鏡','収納を多く','洗濯機パン交換','床・壁も張替え','コンセント増設','タオル掛け・棚','シャワー水栓'],
+    area:{id:'t_wash', name:'洗面化粧台',
+      guide:{do:['間口（幅）は洗面台本体を測る。600/750/900/1000/1200が規格','設置できる幅は「壁から壁」も測る。ドアや窓と当たらないか','洗面台の下の扉を開けて、排水が床か壁か、給湯があるかを写真','洗濯機まわり（パンのサイズ・水栓の高さ）もセットで見る'],say:'「洗面台の下の扉を開けさせてください。配管の位置を確認します」'},
+      items:[
+        {id:'w_body', name:'本体', look:'メーカー・年式・間口（600/750/900/1000/1200）・ミラーの種類（1面/3面）・収納'},
+        {id:'w_drain', name:'給排水', look:'排水位置（床 or 壁）・止水栓・給湯の有無・水漏れ跡・排水の流れ'},
+        {id:'w_floor', name:'床', look:'材質・ふかつき・洗面台の下の変色（漏水跡）'},
+        {id:'w_wall', name:'壁・天井', look:'クロス・カビ・腰壁・天井高・壁の出っ張り'},
+        {id:'w_elec', name:'電気', look:'コンセントの位置と数・アース・照明・ドライヤー用コンセント'},
+        {id:'w_laundry', name:'洗濯機まわり', look:'洗濯機パンのサイズと位置・水栓の高さ・排水口・パン交換の希望'},
+        {id:'w_window', name:'窓・ドア', look:'窓のサイズと位置（ミラーとの干渉）・ドアの幅と開き方向'},
+        {id:'w_space', name:'周辺', look:'壁から壁までの幅・奥行・タオル掛け・棚・脱衣かごの置き場'},
+      ]},
+    rooms:[{name:'洗面所'}],
+    openings:[{place:'洗面台 本体の間口',type:'洗面間口'},{place:'設置できる幅（壁〜壁）',type:'洗面間口'},{place:'洗面所 窓',type:'窓'},{place:'洗面所 ドア',type:'ドア'}],
+  },
+  kitchen:{ name:'キッチン', short:'キッチン', days:'工事 2〜5日',
+    hearing:['主に料理する人と身長 → 天板の高さ（800/850/900）','今の不満（狭い・暗い・収納・換気・掃除）','ガス or IH の希望と理由（安全・火力・光熱費）','家電の置き場（冷蔵庫・レンジ・炊飯器）と冷蔵庫のサイズ','工事中（2〜5日）の食事の段取り'],
+    say:'「普段お料理されるのはどなたですか？今のキッチンで一番困っていることは何でしょうか？」',
+    wishes:['IHにしたい','ガスのまま','食洗機','対面にしたい','吊戸棚なし','吊戸棚あり','カップボード','床・壁も張替え','静かなレンジフード','天板 人造大理石','天板 ステンレス'],
+    area:{id:'t_kitchen', name:'キッチン',
+      guide:{do:['間口（幅）は本体を測る。1800/2100/2400/2550/2700が規格。壁から壁も測る','レンジフードの排気ダクトがどこに抜けているか、外壁側のフードも写真','IHや食洗機の希望があれば分電盤の空きと専用回路（200V）を確認','シンク下の扉を開けて、排水が床か壁か、ガス栓の位置を写真','窓や梁が吊戸棚・レンジフードと当たらないか'],say:'「シンクの下の扉を開けさせてください。配管とガス栓の位置を確認します」'},
+      items:[
+        {id:'k_layout', name:'現状', look:'レイアウト（I型/L型/対面/壁付）・間口（1800/2100/2400/2550/2700）・メーカー・年式・天板素材'},
+        {id:'k_stove', name:'コンロ', look:'ガス or IH・ガス栓の位置・口数・グリル・IH希望なら200V専用回路の有無'},
+        {id:'k_hood', name:'換気扇', look:'種類（プロペラ/シロッコ）・排気ダクトの位置と径・外壁フードの位置・動作'},
+        {id:'k_plumb', name:'給排水', look:'排水位置（床 or 壁）・止水栓・給湯・食洗機用の分岐・水漏れ跡'},
+        {id:'k_dish', name:'食洗機', look:'有無・ビルトイン希望・専用回路・設置スペース（幅450/600）'},
+        {id:'k_elec', name:'電気', look:'コンセントの数と位置・専用回路（食洗機/IH/レンジ）・照明・スイッチ'},
+        {id:'k_floor', name:'床・壁', look:'床のふかつき・キッチンパネル or タイル・油汚れ・コーキング'},
+        {id:'k_cab', name:'吊戸棚・収納', look:'吊戸棚の有無と高さ・カップボード・冷蔵庫の位置とサイズ・炊飯器の置き場'},
+        {id:'k_window', name:'窓・梁', look:'窓の位置とサイズ（吊戸棚やレンジフードとの干渉）・梁や柱の出っ張り・天井高'},
+        {id:'k_gas', name:'ガス・給湯', look:'ガス種（都市ガス/プロパン）・ガスメーターの位置・給湯器との距離'},
+      ]},
+    rooms:[{name:'キッチン（DK）'}],
+    openings:[{place:'キッチン 本体の間口',type:'キッチン間口'},{place:'設置できる幅（壁〜壁）',type:'キッチン間口'},{place:'キッチン 窓',type:'窓'},{place:'吊戸棚の下端 / 天井高',type:'その他'}],
+  },
+};
+const TYPE_ORDER=['toilet','bath','wash','kitchen'];
+const COMMON_AREAS = [
+  {id:'c_util', name:'共通：給湯器・分電盤・配管',
+   guide:{do:['給湯器は本体のシールで号数と設置年を撮る。10年超なら交換提案の候補','分電盤はフタを開けて写真（契約アンペア・回路数・空き）','給排水管の材質（鉄管は錆の原因）と水圧も確認'],say:'「給湯器と分電盤の写真を撮らせてください」'},
    items:[
-     {id:'wall', name:'外壁', look:'ひび割れ・チョーキング・コーキング(目地)の割れや痩せ・塗膜の剥がれ・コケ'},
-     {id:'roof', name:'屋根', look:'瓦のズレ・色あせ・棟板金の浮き・コケ（地上から見える範囲）'},
-     {id:'gutter', name:'雨樋', look:'外れ・歪み・詰まり・継手からの漏れ'},
-     {id:'eave', name:'軒天・破風', look:'シミ・剥がれ・穴（雨漏りや鳥害のサイン）'},
-     {id:'found', name:'基礎', look:'ひび割れ（幅0.3mm以上は要注意）・換気口の詰まり・白華'},
-     {id:'balc', name:'バルコニー', look:'床防水の膨れ・ひび・排水口の詰まり・手すりのぐらつき'},
+     {id:'boiler', name:'給湯器', look:'種類（ガス/エコキュート/灯油）・号数・設置年・設置場所・リモコン'},
+     {id:'panel', name:'分電盤', look:'契約アンペア・回路数・空き回路・漏電ブレーカー・200V回路の有無'},
+     {id:'plumbing', name:'給排水管', look:'材質（鉄管/塩ビ/樹脂）・水圧・漏れ跡・排水の流れと臭い'},
    ]},
-  {id:'water', name:'水まわり',
-   guide:{do:['設備の「メーカー・年式」は本体のシールで確認して写真','キッチンは間口（幅）を測る。ユニットバスは浴槽横の規格サイズを探す','床のふかつき（踏むと沈む）は水漏れのサイン','排水の流れ・臭い・水圧も確認'],
-          say:'「水まわりは普段お困りのことはありますか？排水の流れや臭いなど」'},
+  {id:'c_site', name:'共通：搬入・現場環境',
+   guide:{do:['玄関から現場までの経路を写真（幅・曲がり角・階段）。ユニットバスやキッチンは大きい','駐車できる場所と台数（工事車両）','工事中の電気・水道・トイレを借りられるか','ご近所への挨拶が必要なお宅'],say:'「工事の際、車はこちらに停めさせていただけますか？」'},
    items:[
-     {id:'kitchen', name:'キッチン', look:'間口W・高さ・型（I型/L型）・換気扇の動作・水栓の漏れ・床のふかつき・年式'},
-     {id:'bath', name:'浴室', look:'在来 or ユニット・サイズ(1216/1616など)・換気扇・カビ・床タイルの割れ・窓・追焚き有無'},
-     {id:'wash', name:'洗面', look:'間口W・排水の流れ・鏡裏収納・コンセント・水漏れ跡'},
-     {id:'toilet', name:'トイレ', look:'便器型（タンク有無）・床材・温水洗浄用コンセントの有無・手洗い・換気'},
-     {id:'boiler', name:'給湯器', look:'種類（ガス/エコキュート/灯油）・号数・設置年・設置場所・リモコンの表示'},
-   ]},
-  {id:'int', name:'内装',
-   guide:{do:['部屋ごとに床・壁・天井の順で見る','床は歩いてきしみ・傾き・沈みを確認','天井のシミは雨漏りか結露か。上階や屋根と位置を照合','建具は実際に開け閉めしてみる'],
-          say:'「お部屋の中も見せていただいてよろしいですか？収納の中も少し拝見します」'},
-   items:[
-     {id:'floor', name:'床', look:'きしみ・傾き・沈み・床材の種類（フローリング/CF/畳）・傷'},
-     {id:'wallin', name:'壁', look:'クロスの剥がれ・浮き・カビ・ひび・下地の種類'},
-     {id:'ceil', name:'天井', look:'シミ・たわみ・クロスの剥がれ・天井高'},
-     {id:'door', name:'建具', look:'開閉のスムーズさ・建付け・鍵・蝶番・敷居の摩耗'},
-     {id:'storage', name:'収納', look:'カビ・湿気・棚の状態・広さ'},
-   ]},
-  {id:'win', name:'窓・サッシ',
-   guide:{do:['窓のサイズは「枠の内側」を測る','結露の跡（サッシ下の黒カビ・木枠の腐れ）を見る','網戸・シャッター・雨戸の動作を確認'],
-          say:'「冬の結露や、夏の暑さは気になりますか？」'},
-   items:[
-     {id:'sash', name:'サッシ', look:'種類（アルミ/樹脂/複合）・単板 or ペアガラス・開閉・クレセント錠'},
-     {id:'conden', name:'結露・断熱', look:'結露跡・カビ・木枠の腐れ・隙間風'},
-     {id:'screen', name:'網戸・シャッター・雨戸', look:'破れ・動作・戸袋の状態'},
-   ]},
-  {id:'elec', name:'電気・設備',
-   guide:{do:['分電盤を開けて写真（契約アンペア・回路数・空き）','増設したい場所のコンセント位置を聞く','エアコンは年式と台数、インターホンの型も確認'],
-          say:'「分電盤はどちらにありますか？写真を撮らせてください」'},
-   items:[
-     {id:'panel', name:'分電盤', look:'契約アンペア・回路数・空き回路・漏電ブレーカー・設置年'},
-     {id:'outlet', name:'コンセント・照明', look:'不足している場所・スイッチの不具合・照明の種類'},
-     {id:'ac', name:'エアコン', look:'台数・年式・配管の位置・室外機の設置場所'},
-     {id:'phone', name:'インターホン・TV・LAN', look:'型・モニター有無・アンテナ・配線ルート'},
-   ]},
-  {id:'site', name:'外構・現場環境',
-   guide:{do:['駐車できる場所と台数を確認（工事車両）','資材の搬入経路（道幅・階段・エレベーター）を写真','工事中の電気・水道を借りられるか','ご近所との関係や注意点を聞く'],
-          say:'「工事の際、車はこちらに停めさせていただけますか？」'},
-   items:[
+     {id:'route', name:'搬入経路', look:'玄関幅・廊下幅・曲がり角・階段・エレベーター・養生が必要な場所'},
      {id:'parking', name:'駐車スペース', look:'台数・前面道路の幅・路駐の可否'},
-     {id:'route', name:'搬入経路', look:'道幅・階段・エレベーター・養生が必要な場所'},
-     {id:'exterior', name:'門扉・フェンス・庭', look:'門扉の動作・フェンスの傾き・植栽・外部水栓'},
-     {id:'neighbor', name:'近隣・騒音', look:'隣家との距離・足場が立つスペース・挨拶が必要なお宅'},
+     {id:'borrow', name:'電気・水道・トイレの借用', look:'工事中に使ってよいか・外部水栓・外部コンセント'},
+     {id:'neighbor', name:'近隣', look:'隣家との距離・騒音が気になるお宅・挨拶の要否'},
    ]},
 ];
-const AREA_MAP = Object.fromEntries(AREAS.map(a=>[a.id,a]));
-const ITEM_MAP = {}; AREAS.forEach(a=>a.items.forEach(i=>ITEM_MAP[i.id]={...i, area:a}));
+const ALL_AREAS=[...TYPE_ORDER.map(t=>TYPES[t].area), ...COMMON_AREAS];
+const ITEM_MAP = {}; ALL_AREAS.forEach(a=>a.items.forEach(i=>ITEM_MAP[i.id]={...i, area:a}));
+function activeAreas(s){ return [...(s.basic.types||[]).map(t=>TYPES[t]?.area).filter(Boolean), ...COMMON_AREAS]; }
+function activeItems(s){ return activeAreas(s).flatMap(a=>a.items); }
+function typeNames(s){ return (s.basic.types||[]).map(t=>TYPES[t]?.name).filter(Boolean); }
 
-const KIT = ['メジャー(5.5m)','レーザー距離計','スマホ(充電OK)','懐中電灯','脚立','水平器','マスキングテープ','筆記用具','名刺','図面・資料','スリッパ','養生シート','クラックスケール','マスク・手袋'];
+const KIT = ['メジャー(5.5m)','レーザー距離計','スマホ(充電OK)','懐中電灯','脚立','水平器','マスキングテープ','筆記用具','名刺','図面・資料','スリッパ','養生シート','カタログ','マスク・手袋'];
 
 const REQUIRED = [
   ['basic.customer','お客様名'],['basic.address','住所'],['basic.tel','電話番号'],['basic.date','調査日'],['basic.staff','担当者'],
-  ['basic.request','ご要望（工事内容）'],['hearing.trouble','お困りごと'],['hearing.timing','希望時期'],['hearing.budget','ご予算感'],
+  ['basic.request','ご要望の詳細'],['hearing.trouble','お困りごと'],['hearing.timing','希望時期'],['hearing.budget','ご予算感'],
 ];
 
 /* ========= 保存（IndexedDB。使えない時はメモリ） ========= */
@@ -257,7 +315,7 @@ const DB = {
 };
 
 /* ========= 状態 ========= */
-const state = { surveys:[], cur:null, tab:'basic', confirmDel:null, kit:{} };
+const state = { surveys:[], cur:null, tab:'basic', confirmDel:null, kit:{}, pickTypes:null, openArea:null };
 const $ = sel=>document.querySelector(sel);
 const view = $('#view'), tabs=$('#tabs'), titleEl=$('#title'), backBtn=$('#backBtn'), saveState=$('#saveState');
 const uid = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -267,8 +325,8 @@ function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('on
 
 function newSurvey(){ return {
   id:uid(), createdAt:Date.now(), updatedAt:Date.now(),
-  basic:{date:today(), staff:'', customer:'', address:'', tel:'', built:'', structure:'', floors:'', request:''},
-  hearing:{trouble:'', wish:'', budget:'', timing:'', family:'', pets:'', note:''},
+  basic:{types:[], date:today(), staff:'', customer:'', address:'', tel:'', built:'', structure:'', floors:'', request:''},
+  hearing:{trouble:'', wish:'', wishes:[], budget:'', timing:'', family:'', pets:'', note:''},
   checks:{}, photos:[], rooms:[], openings:[], summary:{note:''}
 }; }
 function get(obj,path){ return path.split('.').reduce((o,k)=>o?.[k],obj); }
@@ -284,31 +342,47 @@ function save(immediate){
   if(immediate) return run(); saveTimer=setTimeout(run,400);
 }
 
+/* 種類を決めたら、測るべき寸法のひな形を用意する */
+function applyTypes(s,types){
+  s.basic.types=types;
+  types.forEach(t=>{ const T=TYPES[t];
+    T.rooms.forEach(r=>{ if(!s.rooms.some(x=>x.name===r.name)) s.rooms.push({id:uid(),name:r.name,w:'',d:'',h:'',note:'',tpl:t}); });
+    T.openings.forEach(o=>{ if(!s.openings.some(x=>x.place===o.place)) s.openings.push({id:uid(),place:o.place,type:o.type||'',w:'',h:'',fl:'',note:o.note||'',tpl:t}); });
+  });
+  // 外した種類の「未入力のひな形」は消す
+  s.rooms=s.rooms.filter(r=>!r.tpl||types.includes(r.tpl)||r.w||r.d||r.h);
+  s.openings=s.openings.filter(o=>!o.tpl||types.includes(o.tpl)||o.w||o.h);
+}
+
 /* ========= 進捗・不足チェック ========= */
 function missing(s){
   const m=[];
+  if(!(s.basic.types||[]).length) m.push('工事の種類が未選択');
   REQUIRED.forEach(([p,label])=>{ if(!String(get(s,p)??'').trim()) m.push(label); });
-  AREAS.forEach(a=>{ const un=a.items.filter(i=>!s.checks[i.id]?.status); if(un.length===a.items.length) m.push(a.name+'：未確認'); else if(un.length) m.push(a.name+'：'+un.map(i=>i.name).join('・')+' が未確認'); });
-  if(s.photos.length<4) m.push('写真が少ない（最低でも全景4方向）');
-  if(!s.rooms.length && !s.openings.length) m.push('採寸なし');
-  const ngNoPhoto = Object.entries(s.checks).filter(([id,c])=>(c.status==='fix'||c.status==='bad') && !s.photos.some(p=>p.item===id));
-  ngNoPhoto.forEach(([id])=>m.push(ITEM_MAP[id].name+'：△×なのに写真がない'));
+  activeAreas(s).forEach(a=>{ const un=a.items.filter(i=>!s.checks[i.id]?.status); if(un.length===a.items.length) m.push(a.name+'：未確認'); else if(un.length) m.push(a.name+'：'+un.map(i=>i.name).join('・')+' が未確認'); });
+  if(s.photos.length<4) m.push('写真が少ない（現状の全体・型番シール・配管まわりは最低限）');
+  const emptyRooms=s.rooms.filter(r=>!r.w||!r.d); if(emptyRooms.length) m.push('採寸なし：'+emptyRooms.map(r=>r.name||'部屋').join('・'));
+  const emptyOps=s.openings.filter(o=>!o.w&&!o.h); if(emptyOps.length) m.push('採寸なし：'+emptyOps.map(o=>o.place||'開口部').join('・'));
+  Object.entries(s.checks).filter(([id,c])=>ITEM_MAP[id]&&(c.status==='fix'||c.status==='bad') && !s.photos.some(p=>p.item===id)).forEach(([id])=>m.push(ITEM_MAP[id].name+'：△×なのに写真がない'));
   return m;
 }
 function progress(s){
-  const total=REQUIRED.length+Object.keys(ITEM_MAP).length; let done=0;
+  const items=activeItems(s); const total=REQUIRED.length+items.length+1; let done=(s.basic.types||[]).length?1:0;
   REQUIRED.forEach(([p])=>{ if(String(get(s,p)??'').trim()) done++; });
-  Object.keys(ITEM_MAP).forEach(id=>{ if(s.checks[id]?.status) done++; });
+  items.forEach(i=>{ if(s.checks[i.id]?.status) done++; });
   return Math.round(done/total*100);
 }
 
 /* ========= 画面 ========= */
 const TABS=[['basic','基本','基'],['hearing','聞く','聞'],['check','見る','見'],['measure','測る','測'],['photo','写真','写'],['summary','まとめ','締']];
+function setTitle(){ const s=state.cur; const c=s.basic.customer; const t=typeNames(s).join('・'); titleEl.innerHTML = esc(c? c+' 様' : '新規調査') + ' <span class="sub">'+esc(t||s.basic.date)+'</span>'; }
 function render(){
   if(!state.cur){ renderHome(); return; }
-  backBtn.hidden=false; tabs.hidden=false;
-  const c=state.cur.basic.customer;
-  titleEl.innerHTML = esc(c? c+' 様' : '新規調査') + ' <span class="sub">'+esc(state.cur.basic.date)+'</span>';
+  backBtn.hidden=false;
+  const needPick = !(state.cur.basic.types||[]).length || state.pickTypes;
+  tabs.hidden=needPick;
+  setTitle();
+  if(needPick){ renderPick(); $('main').scrollTop=0; return; }
   tabs.innerHTML = TABS.map(([id,l,ic])=>`<button data-tab="${id}" ${state.tab===id?'aria-current="page"':''}><span class="ic">${ic}</span>${l}</button>`).join('');
   ({basic:renderBasic, hearing:renderHearing, check:renderCheck, measure:renderMeasure, photo:renderPhoto, summary:renderSummary})[state.tab]();
   $('main').scrollTop=0;
@@ -331,9 +405,9 @@ function renderHome(){
   titleEl.innerHTML='現地調査ナビ <span class="sub">株式会社ワイケイアート</span>'; saveState.textContent='';
   const list=[...state.surveys].sort((a,b)=>b.updatedAt-a.updatedAt);
   view.innerHTML=`
-  <div class="home-hero"><h2>今日の現地調査</h2><p class="muted">1件ごとに「基本 → 聞く → 見る → 測る → 写真 → まとめ」の順に進めば、聞き忘れ・見落としを防げます。データはこの端末の中に保存されます。</p></div>
+  <div class="home-hero"><h2>今日の現地調査</h2><p class="muted">まず工事の種類（トイレ・浴室・洗面化粧台・キッチン）を選ぶと、見る場所・聞くこと・測る寸法がその工事用に切り替わります。データはこの端末の中に保存されます。</p></div>
   <button class="btn primary block" id="newBtn">＋ 新しい調査を始める</button>
-  ${list.length? `<div class="list">${list.map(s=>{const p=progress(s); return `<button class="item" data-open="${s.id}"><div class="t"><b>${esc(s.basic.customer||'（お客様名未入力）')} 様</b><span>${esc(s.basic.date)}　${esc(s.basic.address||'住所未入力')}</span></div><span class="pill ${p>=100?'ok':p>=50?'warn':''}">${p}%</span></button>`}).join('')}</div>` : `<div class="empty">まだ調査データがありません。<br>上のボタンから始めてください。</div>`}
+  ${list.length? `<div class="list">${list.map(s=>{const p=progress(s); return `<button class="item" data-open="${s.id}"><div class="t"><b>${esc(s.basic.customer||'（お客様名未入力）')} 様</b><span>${esc(s.basic.date)}　${esc(typeNames(s).join('・')||'種類未選択')}　${esc(s.basic.address||'')}</span></div><span class="pill ${p>=100?'ok':p>=50?'warn':''}">${p}%</span></button>`}).join('')}</div>` : `<div class="empty">まだ調査データがありません。<br>上のボタンから始めてください。</div>`}
   <details class="card" ${list.length?'':'open'}><summary style="cursor:pointer;font-weight:700;font-family:var(--font-display)">出発前の持ち物チェック</summary>
     <div class="kit" style="margin-top:10px">${KIT.map((k,i)=>`<label><input type="checkbox" data-kit="${i}" ${state.kit[i]?'checked':''}>${esc(k)}</label>`).join('')}</div>
     <p class="muted" style="margin:10px 0 0">現地では「お邪魔します」→ 靴下・スリッパ → 養生 → 調査 → 最後に「本日の内容を社内で確認し、○日までにご連絡します」で締めます。</p>
@@ -342,57 +416,77 @@ function renderHome(){
     <p class="muted">まとめ画面から書き出したJSONファイルを、別の端末やPCで読み込めます。</p>
     <label class="btn sm">JSONを読み込む<input type="file" id="importFile" accept="application/json,.json" hidden></label>
   </details>`;
-  $('#newBtn').onclick=async()=>{ const s=newSurvey(); state.surveys.push(s); state.cur=s; state.tab='basic'; await save(true); render(); };
-  view.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{ state.cur=state.surveys.find(s=>s.id===b.dataset.open); state.tab='basic'; render(); });
+  $('#newBtn').onclick=async()=>{ const s=newSurvey(); state.surveys.push(s); state.cur=s; state.tab='basic'; state.pickTypes=[]; await save(true); render(); };
+  view.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{ state.cur=state.surveys.find(s=>s.id===b.dataset.open); state.tab='basic'; state.pickTypes=null; render(); });
   view.querySelectorAll('[data-kit]').forEach(c=>c.onchange=()=>{ state.kit[c.dataset.kit]=c.checked; try{localStorage.setItem('kit',JSON.stringify(state.kit))}catch(e){} });
   $('#importFile').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ const d=JSON.parse(await f.text()); const arr=Array.isArray(d)?d:[d]; let n=0; for(const s of arr){ if(!s||!s.id||!s.basic) continue; const i=state.surveys.findIndex(x=>x.id===s.id); if(i>=0) state.surveys[i]=s; else state.surveys.push(s); await DB.put(s); n++; } toast(n+'件を読み込みました'); render(); }catch(err){ toast('読み込めませんでした（JSON形式を確認）'); } };
+}
+
+/* 最初の画面：工事の種類を選ぶ */
+function renderPick(){
+  const s=state.cur; const sel=state.pickTypes ?? [...(s.basic.types||[])];
+  state.pickTypes=sel;
+  view.innerHTML=`
+  <div class="home-hero"><h2>今日は何の工事ですか？</h2><p class="muted">当てはまるものを全部選んでください（複数OK）。選んだ工事に合わせて、見るところ・聞くこと・測る寸法が出てきます。</p></div>
+  <div class="types">${TYPE_ORDER.map(t=>`<button data-type="${t}" aria-pressed="${sel.includes(t)}">${esc(TYPES[t].name)}<small>${esc(TYPES[t].days)}</small></button>`).join('')}</div>
+  <button class="btn primary block" id="pickOk" ${sel.length?'':'disabled'}>${sel.length?`${sel.map(t=>TYPES[t].name).join('・')} で始める →`:'種類を選んでください'}</button>
+  ${(s.basic.types||[]).length?`<button class="btn block" id="pickCancel">変更しない</button>`:''}`;
+  view.querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>{ const t=b.dataset.type; const i=sel.indexOf(t); if(i>=0) sel.splice(i,1); else sel.push(t); sel.sort((a,b)=>TYPE_ORDER.indexOf(a)-TYPE_ORDER.indexOf(b)); renderPick(); });
+  $('#pickOk').onclick=()=>{ if(!sel.length) return; applyTypes(s,[...sel]); state.pickTypes=null; state.openArea=null; save(true); render(); };
+  const pc=$('#pickCancel'); if(pc) pc.onclick=()=>{ state.pickTypes=null; render(); };
 }
 
 function renderBasic(){
   const s=state.cur;
   view.innerHTML=`
-  ${guide('最初の5分でやること',{do:['玄関先で名刺を渡し、本日の流れ（所要時間 約60〜90分）を伝える','お客様の名前・住所・電話は「お見積りの宛名」として確認','築年数と構造は、分からなければ「だいたい」でOK。登記簿や図面があれば写真'],say:'「本日は〇〇のご相談とのことで、まずお話を伺ってから、お家を拝見させてください」'})}
+  <div class="card"><h2>工事の種類</h2><div class="chips">${typeNames(s).map(n=>`<span class="chip">${esc(n)}</span>`).join('')}<button class="btn sm" id="changeTypes">変更</button></div></div>
+  ${guide('最初の5分でやること',{do:['玄関先で名刺を渡し、本日の流れ（所要時間 約60分）を伝える','お客様の名前・住所・電話は「お見積りの宛名」として確認','築年数と構造は、分からなければ「だいたい」でOK。図面があれば写真','水まわりの工事は「今の設備のメーカーと年式」が見積りの出発点。シールを探す'],say:'「本日は'+typeNames(s).join('と')+'のご相談とのことで、まずお話を伺ってから、現状を拝見させてください」'})}
   <div class="card"><h2>お客様・物件</h2>
     <div class="row">${field('basic.date','調査日',{type:'date',req:1})}${field('basic.staff','担当者',{req:1,ph:'自分の名前'})}</div>
     ${field('basic.customer','お客様名',{req:1,ph:'例：山田 太郎'})}
     ${field('basic.address','住所',{req:1,ph:'例：鹿児島市〇〇町1-2-3'})}
     ${field('basic.tel','電話番号',{type:'tel',req:1,ph:'例：090-0000-0000'})}
-    <div class="row">${field('basic.built','築年数',{type:'number',ph:'年',attrs:'inputmode="numeric"'})}${field('basic.structure','構造',{type:'select',options:['木造','鉄骨造','RC造','その他・不明']})}${field('basic.floors','階数',{type:'select',options:['平屋','2階建','3階建','マンション']})}</div>
+    <div class="row">${field('basic.built','築年数',{type:'number',ph:'年',attrs:'inputmode="numeric"'})}${field('basic.structure','構造',{type:'select',options:['木造','鉄骨造','RC造','その他・不明']})}${field('basic.floors','建物',{type:'select',options:['平屋','2階建','3階建','マンション']})}</div>
   </div>
-  <div class="card"><h2>ご要望（工事内容）</h2>
-    ${field('basic.request','どこを、どうしたいか',{type:'textarea',req:1,ph:'例：浴室をユニットバスに。ついでに洗面も検討中'})}
+  <div class="card"><h2>ご要望の詳細</h2>
+    ${field('basic.request','どこを、どうしたいか',{type:'textarea',req:1,ph:'例：浴室をユニットバスに。ついでに洗面も検討中。2階のトイレは今回は見送り'})}
   </div>
   <div class="actions"><button class="btn primary block" data-go="hearing">次へ：ヒアリング →</button></div>`;
+  $('#changeTypes').onclick=()=>{ state.pickTypes=[...s.basic.types]; render(); };
   bindFields();
 }
 
 function renderHearing(){
+  const s=state.cur; const types=s.basic.types||[]; const wishes=s.hearing.wishes||[];
   view.innerHTML=`
   ${guide('ヒアリングのコツ',{do:['「なぜ今リフォームしたいのか」を一番最初に聞く。きっかけに本当の要望が隠れている','予算は「〇〇万円くらいを目安にお考えですか？」と幅で聞く','時期は「いつまでに終わっていたいか」（イベント・季節・入居）で聞く','聞いた言葉はできるだけそのままメモ（自分の解釈にしない）'],say:'「今回リフォームをお考えになったきっかけは何でしょうか？」'})}
+  ${types.map(t=>guide(TYPES[t].name+'で聞くこと',{do:TYPES[t].hearing,say:TYPES[t].say})).join('')}
   <div class="card"><h2>お困りごと・ご希望</h2>
     ${field('hearing.trouble','お困りごと（きっかけ）',{type:'textarea',req:1,ph:'例：浴室が寒い。タイルが割れて掃除が大変'})}
     ${field('hearing.wish','こうなったら嬉しい（理想）',{type:'textarea',ph:'例：暖かくて掃除しやすいお風呂。手すりも欲しい'})}
   </div>
+  ${types.map(t=>`<div class="card"><h2>${esc(TYPES[t].name)}の希望仕様 <span class="cnt">当てはまるものにチェック</span></h2><div class="wishes">${TYPES[t].wishes.map(w=>{const key=t+':'+w; return `<label><input type="checkbox" data-wish="${esc(key)}" ${wishes.includes(key)?'checked':''}>${esc(w)}</label>`;}).join('')}</div></div>`).join('')}
   <div class="card"><h2>条件</h2>
     <div class="row">${field('hearing.budget','ご予算感',{req:1,ph:'例：100〜150万円'})}${field('hearing.timing','希望時期',{req:1,ph:'例：年内。12月中旬まで'})}</div>
     <div class="row">${field('hearing.family','ご家族構成・住まい方',{ph:'例：ご夫婦2人、お孫さんが週末に'})}${field('hearing.pets','ペット・留守・鍵',{ph:'例：犬1匹。平日は不在で鍵預かり可'})}</div>
-    ${field('hearing.note','その他メモ',{type:'textarea',ph:'補助金の希望、他社見積の有無、気になる一言など'})}
+    ${field('hearing.note','その他メモ',{type:'textarea',ph:'補助金の希望、他社見積の有無、工事中の生活（お風呂・食事）など'})}
   </div>
   <div class="actions"><button class="btn" data-go="basic">← 基本</button><button class="btn primary" style="flex:1" data-go="check">次へ：現場チェック →</button></div>`;
+  view.querySelectorAll('[data-wish]').forEach(c=>c.onchange=()=>{ const k=c.dataset.wish; const arr=s.hearing.wishes||(s.hearing.wishes=[]); const i=arr.indexOf(k); if(c.checked&&i<0) arr.push(k); if(!c.checked&&i>=0) arr.splice(i,1); save(); });
   bindFields();
 }
 
 function renderCheck(){
-  const s=state.cur;
+  const s=state.cur; const areas=activeAreas(s); const open=state.openArea||areas[0].id;
   view.innerHTML=`
   <div class="card" style="padding:10px 14px"><div class="muted">各項目を見て「○△×」を押す。△×は写真とメモを残す。見られなかった物は「－」で正直に。</div></div>
-  ${AREAS.map(a=>{ const done=a.items.filter(i=>s.checks[i.id]?.status).length; const ng=a.items.filter(i=>['fix','bad'].includes(s.checks[i.id]?.status)).length;
-    return `<details class="area" ${a.id===(state.openArea||AREAS[0].id)?'open':''} data-area="${a.id}"><summary>${esc(a.name)} <span class="pill ${done===a.items.length?'ok':''}">${done}/${a.items.length}</span>${ng?`<span class="pill bad">要対応 ${ng}</span>`:''}</summary>
-    <div class="body">${guide(a.name,a.guide)}
+  ${areas.map(a=>{ const done=a.items.filter(i=>s.checks[i.id]?.status).length; const ng=a.items.filter(i=>['fix','bad'].includes(s.checks[i.id]?.status)).length;
+    return `<details class="area" ${a.id===open?'open':''} data-area="${a.id}"><summary>${esc(a.name)} <span class="pill ${done===a.items.length?'ok':''}">${done}/${a.items.length}</span>${ng?`<span class="pill bad">要対応 ${ng}</span>`:''}</summary>
+    <div class="body">${guide(a.name.replace('共通：',''),a.guide)}
       ${a.items.map(i=>{ const c=s.checks[i.id]||{}; const pc=s.photos.filter(p=>p.item===i.id).length;
         return `<div class="check"><div class="name">${esc(i.name)} ${pc?`<span class="pill">写真 ${pc}</span>`:''}</div><div class="look">見るところ：${esc(i.look)}</div>
         <div class="seg">${STATUS.map(st=>`<button data-chk="${i.id}" data-v="${st.v}" aria-pressed="${c.status===st.v}">${st.label}</button>`).join('')}</div>
-        <div class="memo-row"><input data-memo="${i.id}" value="${esc(c.memo||'')}" placeholder="メモ（場所・大きさ・お客様の話）"><label class="btn sm">📷<input type="file" accept="image/*" capture="environment" data-shoot="${i.id}" hidden></label></div></div>`; }).join('')}
+        <div class="memo-row"><input data-memo="${i.id}" value="${esc(c.memo||'')}" placeholder="メモ（メーカー・型番・サイズ・お客様の話）"><label class="btn sm">📷<input type="file" accept="image/*" capture="environment" data-shoot="${i.id}" hidden></label></div></div>`; }).join('')}
     </div></details>`; }).join('')}
   <div class="actions"><button class="btn" data-go="hearing">← 聞く</button><button class="btn primary" style="flex:1" data-go="measure">次へ：採寸 →</button></div>`;
   view.querySelectorAll('[data-chk]').forEach(b=>b.onclick=()=>{ const id=b.dataset.chk; s.checks[id]={...(s.checks[id]||{}),status:b.dataset.v}; save(); state.openArea=ITEM_MAP[id].area.id; renderCheck(); });
@@ -403,7 +497,7 @@ function renderCheck(){
 }
 
 function renderMeasure(){
-  const s=state.cur;
+  const s=state.cur; const types=s.basic.types||[];
   const roomRow=r=>{ const area=(r.w&&r.d)?(r.w*r.d/1e6):0; const jo=area/1.62;
     return `<div class="mrow" data-room="${r.id}"><div class="grid2"><input data-rf="name" value="${esc(r.name)}" placeholder="部屋名（例：浴室）"><input data-rf="note" value="${esc(r.note||'')}" placeholder="メモ（梁・段差など）"></div>
     <div class="grid3"><div class="field"><label>幅 W (mm)</label><input type="number" inputmode="numeric" data-rf="w" value="${esc(r.w)}"></div><div class="field"><label>奥行 D (mm)</label><input type="number" inputmode="numeric" data-rf="d" value="${esc(r.d)}"></div><div class="field"><label>天井高 H (mm)</label><input type="number" inputmode="numeric" data-rf="h" value="${esc(r.h)}"></div></div>
@@ -411,8 +505,9 @@ function renderMeasure(){
   const opRow=o=>`<div class="mrow" data-op="${o.id}"><div class="grid2"><input data-of="place" value="${esc(o.place)}" placeholder="場所（例：浴室 窓）"><select data-of="type"><option value="">種類</option>${['窓','ドア','引戸','開口','キッチン間口','洗面間口','浴室(内寸)','その他'].map(t=>`<option ${o.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
     <div class="grid3"><div class="field"><label>幅 W (mm)</label><input type="number" inputmode="numeric" data-of="w" value="${esc(o.w)}"></div><div class="field"><label>高さ H (mm)</label><input type="number" inputmode="numeric" data-of="h" value="${esc(o.h)}"></div><div class="field"><label>床からの高さ (mm)</label><input type="number" inputmode="numeric" data-of="fl" value="${esc(o.fl||'')}"></div></div>
     <div class="calc"><input data-of="note" value="${esc(o.note||'')}" placeholder="メモ" style="flex:1"><button class="btn sm danger" data-delop="${o.id}">削除</button></div></div>`;
+  const tips={toilet:'トイレ：内寸W×D、ドア幅、排水芯（壁〜排水管中心）。便器の後ろ側をのぞいて測る',bath:'浴室：内寸W×D×H（壁の内側〜内側）、窓W×H と床からの高さ、ドアW×H、脱衣所との段差',wash:'洗面：本体の間口W、壁〜壁の幅、奥行、窓やドアまでの距離',kitchen:'キッチン：本体の間口W、壁〜壁の幅、天井高、窓の位置と床からの高さ、ダクトの位置'};
   view.innerHTML=`
-  ${guide('採寸の基本',{do:['単位は全部 mm。「1,820」のようにメモしない（4桁そのまま）','部屋は「壁の内側から内側」を測る。天井高も忘れずに','ユニットバスは浴槽まわりの壁に 1216 / 1616 などの規格表示がある','キッチン・洗面は間口（幅）と、背面の壁までの距離','分からない寸法は無理に埋めず、写真を撮って先輩に聞く'],say:'「少しお部屋の寸法を測らせてください。家具は動かしません」'})}
+  ${guide('採寸の基本',{do:['単位は全部 mm。「1,820」のようにメモしない（4桁そのまま）','部屋は「壁の内側から内側」を測る。天井高も忘れずに',...types.map(t=>tips[t]),'分からない寸法は無理に埋めず、写真を撮って先輩に聞く'],say:'「少し寸法を測らせてください。家具は動かしません」'})}
   <div class="card"><h2>部屋 <span class="cnt">${s.rooms.length}件</span></h2><div class="list">${s.rooms.map(roomRow).join('')||'<div class="empty">まだありません</div>'}</div><div class="actions" style="margin-top:10px"><button class="btn block" id="addRoom">＋ 部屋を追加</button></div></div>
   <div class="card"><h2>開口部・設備サイズ <span class="cnt">${s.openings.length}件</span></h2><div class="list">${s.openings.map(opRow).join('')||'<div class="empty">まだありません</div>'}</div><div class="actions" style="margin-top:10px"><button class="btn block" id="addOp">＋ 開口部を追加</button></div></div>
   <div class="actions"><button class="btn" data-go="check">← 見る</button><button class="btn primary" style="flex:1" data-go="photo">次へ：写真 →</button></div>`;
@@ -434,15 +529,16 @@ async function addPhotos(files,extra={}){
   for(const f of files){ try{ const data=await shrink(f); s.photos.push({id:uid(), at:Date.now(), caption:'', ...extra, data}); n++; }catch(e){} }
   if(n){ try{ await save(true); toast(n+'枚を追加'); }catch(e){ toast('保存容量が足りません。写真を減らすか書き出してください'); } }
 }
+function photoLabel(p){ return p.item==='_all'?'全体':p.item==='_doc'?'図面・書類':p.item==='_label'?'型番シール':ITEM_MAP[p.item]?.name||''; }
 function renderPhoto(){
-  const s=state.cur;
-  const itemOpts=sel=>`<option value="">分類なし</option>`+AREAS.map(a=>`<optgroup label="${esc(a.name)}">${a.items.map(i=>`<option value="${i.id}" ${sel===i.id?'selected':''}>${esc(i.name)}</option>`).join('')}</optgroup>`).join('')+`<option value="_all" ${sel==='_all'?'selected':''}>全景</option><option value="_doc" ${sel==='_doc'?'selected':''}>図面・書類</option>`;
+  const s=state.cur; const areas=activeAreas(s);
+  const itemOpts=sel=>`<option value="">分類なし</option><option value="_all" ${sel==='_all'?'selected':''}>現状の全体</option><option value="_label" ${sel==='_label'?'selected':''}>型番シール</option>`+areas.map(a=>`<optgroup label="${esc(a.name)}">${a.items.map(i=>`<option value="${i.id}" ${sel===i.id?'selected':''}>${esc(i.name)}</option>`).join('')}</optgroup>`).join('')+`<option value="_doc" ${sel==='_doc'?'selected':''}>図面・書類</option>`;
   view.innerHTML=`
-  ${guide('写真の撮り方',{do:['最初に建物の全景を4方向（正面・左・右・裏）','不具合は「遠く→近く」の2枚セット。どこの話か分かるように','設備は本体のシール（メーカー・型番・年式）を接写','分電盤・給湯器・メーター類は必ず','撮った写真はその場で分類とひとこと説明を付ける'],say:'「お写真を撮らせていただきます。社内で検討するための資料ですのでご安心ください」'})}
+  ${guide('写真の撮り方',{do:['最初に今の設備の全体を正面から1枚、斜めから1枚','メーカー・型番・年式のシールを接写（これが無いと見積りが出せない）','扉の中（配管・止水栓・排水の位置）を懐中電灯で照らして撮る','不具合は「遠く→近く」の2枚セット。どこの話か分かるように','搬入経路（玄関・廊下・曲がり角）も忘れずに'],say:'「お写真を撮らせていただきます。社内で検討するための資料ですのでご安心ください」'})}
   <div class="card"><div class="shoot"><label class="btn primary">📷 カメラで撮る<input type="file" accept="image/*" capture="environment" id="shootCam" multiple hidden></label><label class="btn">🖼 写真を選ぶ<input type="file" accept="image/*" id="shootLib" multiple hidden></label></div>
   <p class="muted" style="margin:8px 0 0">写真は端末内に縮小保存されます（元の写真はスマホのカメラロールにも残ります）。</p></div>
   <div class="card"><h2>撮影済み <span class="cnt">${s.photos.length}枚</span></h2>
-    ${s.photos.length?`<div class="photos">${[...s.photos].reverse().map((p,idx)=>`<div class="ph" data-ph="${p.id}"><img src="${p.data}" alt="${esc(p.caption||'写真')}" loading="lazy"><div class="meta"><select data-pf="item">${itemOpts(p.item)}</select><input data-pf="caption" value="${esc(p.caption)}" placeholder="ひとこと（例：北面 外壁ひび）"><button class="btn sm danger" data-delph="${p.id}">削除</button></div></div>`).join('')}</div>`:'<div class="empty">まだ写真がありません</div>'}
+    ${s.photos.length?`<div class="photos">${[...s.photos].reverse().map(p=>`<div class="ph" data-ph="${p.id}"><img src="${p.data}" alt="${esc(p.caption||'写真')}" loading="lazy"><div class="meta"><select data-pf="item">${itemOpts(p.item)}</select><input data-pf="caption" value="${esc(p.caption)}" placeholder="ひとこと（例：排水は床。止水栓あり）"><button class="btn sm danger" data-delph="${p.id}">削除</button></div></div>`).join('')}</div>`:'<div class="empty">まだ写真がありません</div>'}
   </div>
   <div class="actions"><button class="btn" data-go="measure">← 測る</button><button class="btn primary" style="flex:1" data-go="summary">次へ：まとめ →</button></div>`;
   $('#shootCam').onchange=e=>addPhotos(e.target.files).then(renderPhoto);
@@ -454,26 +550,23 @@ function renderPhoto(){
 
 function report(s){
   const st=v=>({ok:'○',fix:'△要補修',bad:'×要交換',na:'－未確認'}[v]||'（未チェック）');
-  const L=[];
-  L.push(`【現地調査報告】${s.basic.customer||'（未入力）'} 様`);
+  const L=[]; const types=s.basic.types||[];
+  L.push(`【現地調査報告】${s.basic.customer||'（未入力）'} 様　${typeNames(s).join('・')||'（種類未選択）'}`);
   L.push(`調査日：${s.basic.date}　担当：${s.basic.staff||'－'}`);
   L.push(`住所：${s.basic.address||'－'}　TEL：${s.basic.tel||'－'}`);
   L.push(`建物：築${s.basic.built||'?'}年 / ${s.basic.structure||'構造不明'} / ${s.basic.floors||'－'}`);
   L.push('',`■ご要望`,s.basic.request||'－');
   L.push('',`■お困りごと（きっかけ）`,s.hearing.trouble||'－');
   if(s.hearing.wish) L.push(`■理想`,s.hearing.wish);
+  types.forEach(t=>{ const ws=(s.hearing.wishes||[]).filter(k=>k.startsWith(t+':')).map(k=>k.slice(t.length+1)); if(ws.length) L.push(`■${TYPES[t].name}の希望仕様：${ws.join('、')}`); });
   L.push('',`■条件`,`予算感：${s.hearing.budget||'－'}　希望時期：${s.hearing.timing||'－'}`,`家族・住まい方：${s.hearing.family||'－'}　ペット・鍵：${s.hearing.pets||'－'}`);
   if(s.hearing.note) L.push(`その他：${s.hearing.note}`);
-  L.push('',`■現場チェック（要対応のみ）`);
-  let ng=0;
-  AREAS.forEach(a=>a.items.forEach(i=>{ const c=s.checks[i.id]; if(c&&['fix','bad'].includes(c.status)){ ng++; L.push(`・${a.name.split('（')[0]}/${i.name}：${st(c.status)}${c.memo?'　'+c.memo:''}`);} }));
-  if(!ng) L.push('（要対応なし）');
-  const un=Object.values(ITEM_MAP).filter(i=>!s.checks[i.id]?.status||s.checks[i.id].status==='na');
-  if(un.length) L.push(`未確認：${un.map(i=>i.name).join('・')}`);
+  L.push('',`■現場チェック`);
+  activeAreas(s).forEach(a=>{ const lines=a.items.filter(i=>s.checks[i.id]?.status&&s.checks[i.id].status!=='na'&&(s.checks[i.id].memo||s.checks[i.id].status!=='ok')).map(i=>{const c=s.checks[i.id]; return `・${i.name}：${st(c.status)}${c.memo?'　'+c.memo:''}`;}); if(lines.length){ L.push(`[${a.name.replace('共通：','')}]`,...lines); } });
   if(s.rooms.length){ L.push('',`■採寸（mm）`); s.rooms.forEach(r=>{ const a=(r.w&&r.d)?(r.w*r.d/1e6).toFixed(2):'－'; L.push(`・${r.name||'部屋'}：W${r.w||'?'} × D${r.d||'?'} × H${r.h||'?'}（${a}㎡）${r.note?'　'+r.note:''}`); }); }
   if(s.openings.length){ L.push(`■開口部・設備サイズ（mm）`); s.openings.forEach(o=>L.push(`・${o.place||'－'}${o.type?'('+o.type+')':''}：W${o.w||'?'} × H${o.h||'?'}${o.fl?' FL+'+o.fl:''}${o.note?'　'+o.note:''}`)); }
   L.push('',`■写真：${s.photos.length}枚`);
-  s.photos.forEach((p,i)=>{ const lab=p.item==='_all'?'全景':p.item==='_doc'?'書類':ITEM_MAP[p.item]?.name||''; if(lab||p.caption) L.push(`${i+1}. ${lab}${lab&&p.caption?' ':''}${p.caption||''}`); });
+  s.photos.forEach((p,i)=>{ const lab=photoLabel(p); if(lab||p.caption) L.push(`${i+1}. ${lab}${lab&&p.caption?' ':''}${p.caption||''}`); });
   if(s.summary.note) L.push('',`■所感・申し送り`,s.summary.note);
   const m=missing(s); if(m.length) L.push('',`■未入力・要確認`,...m.map(x=>'・'+x));
   return L.join('\n');
@@ -484,7 +577,7 @@ function renderSummary(){
   <div class="card"><h2>完了度 <span class="cnt">${p}%</span></h2><div class="prog"><i style="width:${p}%"></i></div>
     ${m.length?`<p class="muted" style="margin:10px 0 4px">帰る前に確認（お客様の前で埋めるのが一番早い）：</p><ul class="miss">${m.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:`<p style="margin:10px 0 0;color:var(--ok);font-weight:700">必須項目はそろっています。お疲れさまでした。</p>`}
   </div>
-  ${guide('帰る前の締め',{do:['「本日の内容を社内で確認し、〇日までにご連絡します」と期日を言う','見られなかった所・分からなかった事は正直に「確認して連絡します」','報告文をコピーして、先輩・上司にその日のうちに送る','写真つきデータ（JSON）は書き出してPCに保存'],say:'「本日はありがとうございました。〇日までにお見積りの方向性をご連絡いたします」'})}
+  ${guide('帰る前の締め',{do:['「本日の内容を社内で確認し、〇日までにご連絡します」と期日を言う','見られなかった所・分からなかった事は正直に「確認して連絡します」','工事中の生活（お風呂に入れない・キッチンが使えない期間）を伝えておく','報告文をコピーして、先輩・上司にその日のうちに送る','写真つきデータ（JSON）は書き出してPCに保存'],say:'「本日はありがとうございました。〇日までにお見積りの方向性をご連絡いたします」'})}
   <div class="card"><h2>所感・申し送り</h2>${field('summary.note','気づいたこと・先輩に相談したいこと',{type:'textarea',ph:'例：浴室の窓が大きく、ユニットバス1616は入るか要確認。お客様は補助金に関心あり'})}</div>
   <div class="card"><h2>報告文</h2><pre class="report" id="reportText">${esc(report(s))}</pre>
     <div class="actions" style="margin-top:10px"><button class="btn primary" id="copyBtn">報告文をコピー</button><button class="btn" id="exportBtn">写真つきデータを書き出す（JSON）</button></div>
@@ -500,17 +593,19 @@ function renderSummary(){
 }
 
 function bindFields(after){
-  view.querySelectorAll('[data-path]').forEach(el=>{ el.oninput=el.onchange=()=>{ set(state.cur,el.dataset.path,el.value); save(); if(el.dataset.path==='basic.customer'||el.dataset.path==='basic.date'){ const c=state.cur.basic.customer; titleEl.innerHTML=esc(c?c+' 様':'新規調査')+' <span class="sub">'+esc(state.cur.basic.date)+'</span>'; } if(after) after(); }; });
+  view.querySelectorAll('[data-path]').forEach(el=>{ el.oninput=el.onchange=()=>{ set(state.cur,el.dataset.path,el.value); save(); if(el.dataset.path==='basic.customer') setTitle(); if(after) after(); }; });
   bindNav();
 }
 function bindNav(){ view.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ state.tab=b.dataset.go; render(); }); }
 tabs.onclick=e=>{ const b=e.target.closest('[data-tab]'); if(b){ state.tab=b.dataset.tab; render(); } };
-backBtn.onclick=async()=>{ if(state.cur){ await save(true); } state.cur=null; state.confirmDel=null; render(); };
+document.addEventListener('visibilitychange',()=>{ if(document.hidden&&state.cur){ clearTimeout(saveTimer); DB.put(state.cur).catch(()=>{}); } });
+backBtn.onclick=async()=>{ if(state.cur){ await save(true); } state.cur=null; state.confirmDel=null; state.pickTypes=null; render(); };
 
 /* ========= 起動 ========= */
 (async()=>{
   try{ state.kit=JSON.parse(localStorage.getItem('kit')||'{}'); }catch(e){}
   state.surveys=await DB.all();
+  state.surveys.forEach(s=>{ s.basic.types=s.basic.types||[]; s.hearing.wishes=s.hearing.wishes||[]; });
   render();
   if(!DB.ok) toast('この環境では保存できません。入力内容は画面を閉じると消えます');
   if('serviceWorker' in navigator && location.protocol==='https:'){ try{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }catch(e){} }
