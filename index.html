@@ -168,6 +168,11 @@ pre.report{white-space:pre-wrap;word-break:break-word;background:var(--surface2)
 .calc-t td{padding:4px;border-top:1px solid var(--tip-line)}
 .calc-t td.num{text-align:right;white-space:nowrap}
 .calc-t small{color:var(--muted);font-size:11px}
+.points{background:var(--tip);border-color:var(--tip-line)}
+.points ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
+.points li{font-size:13.5px}
+.points li b{display:block;font-size:15px}
+.points li span{color:var(--muted)}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
 </style>
 </head>
@@ -235,6 +240,11 @@ const TYPES = {
       ['天井板','和室の天井。板に溝がある','薄いベニヤを貼ってからクロス'],
     ]}},
   exterior:{ name:'外壁塗装', days:'2〜3週間・足場あり',
+    points:[
+      ['外壁だけでなく「目地」と「付帯部」まで見る','チョーキングは触って白い粉。目地のシーリングはひび・やせ・剥がれ。雨樋・軒天・破風は地上から見る（登らない）'],
+      ['外壁の種類で工事内容が変わる','サイディングはシーリング打ち替え、モルタルはひび補修が必ず付く。ひびは幅を見る（0.3mm以上は要注意）'],
+      ['足場が立つか、敷地を見る','隣家との距離、電線、カーポート・植栽・室外機。高圧洗浄用の水道・電気を借りられるか'],
+    ],
     intro:[
       { title:'外壁の種類', prefix:'塗装のポイント：', rows:[
         ['窯業系サイディング','板を貼り合わせた継ぎ目（目地）にコーキング。レンガ調・石目調など柄付き。一番多い','コーキングの打ち替えが必要'],
@@ -383,11 +393,12 @@ function renderSheet(){
     const shots=b.shots.map(([lab,hint],i)=>{ const k=key(b.key,'shots',i); const p=s.shots[k]; return `<div class="shot ${p?'done':''}"><div class="th">${p?`<img src="${p.data}" alt="">`:'未'}</div><div class="lb">${esc(lab)}${hint?`<small>${esc(hint)}</small>`:''}</div><div class="ops"><label class="btn sm ${p?'':'primary'}">${p?'撮り直す':'📷 撮る'}<input type="file" accept="image/*" capture="environment" data-shot="${k}"></label>${p?`<button class="btn sm danger" data-delshot="${k}">×</button>`:''}</div></div>`; }).join('');
     const ask=b.ask.map(([q,hint],i)=>{ const k=key(b.key,'ask',i); return `<div class="ask"><label for="a_${k}">${esc(q)}${hint?`<small>${esc(hint)}</small>`:''}</label><input id="a_${k}" data-ask="${k}" value="${esc(s.answers[k]||'')}" placeholder="お客様の言葉をそのままメモ"></div>`; }).join('');
     const alert=b.alert?`<div class="alert"><h2>⚠ 注意：${esc(b.alert.title)}</h2><ol>${b.alert.items.map((it,i)=>{ const k=key(b.key,'gear',i); const on=s.see[k]?.done; return `<li><label><input type="checkbox" data-see="${k}" ${on?'checked':''}><span class="n">${'①②③④⑤⑥'[i]||i+1}</span>${esc(it)}</label></li>`; }).join('')}</ol></div>`:'';
+    const pointsHtml=b.points?`<div class="card points"><h2>現調の3つのポイント</h2><ol>${b.points.map(([t,d])=>`<li><b>${esc(t)}</b><span>${esc(d)}</span></li>`).join('')}</ol></div>`:'';
     const introHtml=(b.intro||[]).map((g,gi)=>{ const k=key(b.key,'intro',gi); const cur=s.answers[k]||''; return `<div class="card"><h2>${esc(g.title)} <span class="cnt ${cur?'ok':''}">${cur?'✓ '+esc(cur):'どれか1つ選ぶ'}</span></h2><div class="cases">${g.rows.map(([pl,how,note])=>`<label class="case pick ${cur===pl?'sel':''}"><input type="radio" name="intro_${b.key}_${gi}" data-intro="${k}" value="${esc(pl)}" ${cur===pl?'checked':''}><b>${esc(pl)}</b><span>${esc(how)}</span><span class="where">→ ${esc(g.prefix)}${esc(note)}</span></label>`).join('')}</div></div>`; }).join('');
     const cases=b.cases?`<div class="card"><h2>${esc(b.cases.title)} <span class="cnt">お客様への説明にも</span></h2><div class="cases">${b.cases.rows.map(([pl,cause,where])=>`<div class="case"><b>${esc(pl)}</b><span>${esc(cause)}</span><span class="where">→ ${esc(b.cases.prefix)}${esc(where)}</span></div>`).join('')}</div></div>`:'';
     return `<div class="sheet-head"><h2>${esc(b.name)}</h2>${b.days?`<span class="pill">${esc(b.days)}</span>`:''}</div>${alert}
       ${b.key!=='common'?`<div class="jump"><button data-jump="${b.key}-see">見る ${c.see[0]}/${c.see[1]}</button><button data-jump="${b.key}-measure">測る ${c.measure[0]}/${c.measure[1]}</button><button data-jump="${b.key}-shots">写真 ${c.shots[0]}/${c.shots[1]}</button><button data-jump="${b.key}-ask">聞く ${c.ask[0]}/${c.ask[1]}</button></div>`:''}
-      ${introHtml}${sec(b,'see','1','見る',see,c.see)}${cases}
+      ${pointsHtml}${introHtml}${sec(b,'see','1','見る',see,c.see)}${cases}
       ${b.measure.length?sec(b,'measure','2','測る',`<div class="tip" style="margin-bottom:8px">単位は mm。分からない所は空欄のまま、写真を撮って先輩に聞く。</div>`+measure+(b.calc?`<div id="${b.key}-calc">${calcHtml(b,s)}</div>`:''),c.measure):''}
       ${b.shots.length?sec(b,'shots','3','写真を撮る',shots,c.shots):''}
       ${b.ask.length?sec(b,'ask','4','聞く',ask,c.ask):''}`; }).join('');
