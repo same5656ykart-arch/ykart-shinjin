@@ -145,6 +145,20 @@ pre.report{white-space:pre-wrap;word-break:break-word;background:var(--surface2)
 .kit label{display:flex;align-items:center;gap:6px;font-size:13.5px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
 .kit input{width:auto;margin:0}
 .miss li{margin:3px 0}
+
+/* 雨漏れなど：大きな注意と、よくある原因の説明 */
+.alert{border:3px solid var(--bad);background:var(--bad-bg);border-radius:12px;padding:14px}
+.alert h2{color:var(--bad);font-size:22px;margin-bottom:8px}
+.alert ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.alert li label{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;padding:8px 10px;background:var(--surface);border-radius:8px}
+.alert li input{width:26px;height:26px;margin:0;accent-color:var(--bad);flex:0 0 auto}
+.alert li .n{color:var(--bad);font-family:var(--font-display)}
+.cases{display:flex;flex-direction:column;gap:8px}
+.case{display:grid;grid-template-columns:72px 1fr;gap:4px 10px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.case:last-child{border-bottom:0}
+.case b{font-family:var(--font-display);color:var(--accent);grid-row:span 2}
+.case .where{color:var(--muted)}
+.case .where::before{content:"→ 出る場所："}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
 </style>
 </head>
@@ -208,10 +222,19 @@ const TYPES = {
     shots:[ ['4方向の全景','正面・左・右・裏'], ['ひび・剥がれ','近くで'], ['コーキング',''], ['軒天・雨樋',''], ['足場スペース',''] ],
     ask:[ ['一番困っていることは？','色あせ・ひび・汚れ'], ['前に塗ったのはいつ？',''], ['屋根も一緒に塗る？',''], ['色の希望は？','サンプルを見せる'], ['足場中の駐車・洗濯物はどうする？',''], ['予算の目安と、いつまでに？',''] ]},
   leak:{ name:'雨漏れ', days:'原因調査のあと見積り',
-    see:[ ['室内のシミの場所と広がり',''], ['真上の外部','屋根・ベランダ・外壁・窓まわり'], ['窓まわりのコーキング・サッシの隙間',''], ['雨樋の詰まり・外れ',''], ['天井裏の濡れ跡','点検口から。登らない'] ],
-    measure:[ ['シミの大きさ','','例：300×500'], ['シミの位置（壁からの距離）','mm',''], ['天井高','mm',''] ],
-    shots:[ ['室内のシミ','遠くと近くの2枚'], ['真上の外部','屋根・ベランダ・外壁'], ['窓まわり',''], ['天井裏','あれば'] ],
-    ask:[ ['いつから？どんな雨の時に漏れる？','強い雨・横なぐりの雨・風向き'], ['過去に修理したことは？',''], ['応急処置は必要？',''], ['内装（天井・壁）も直す？',''], ['予算の目安と、いつまでに？',''] ]},
+    alert:{ title:'持ち物を確認', items:['脚立','デジカメ','デジカメのスマホアプリ（写真の転送用）','延長三脚（高い所・屋根の撮影用）'] },
+    see:[ ['漏れている場所は 1Fか 2Fか（最上階か）','最上階なら屋根、1Fなら上の階・ベランダ・外壁を疑う'], ['真上は何か：屋根 / ベランダ / 上の階の部屋',''], ['外壁まわり：ひび・コーキング切れ・換気フードや配管の隙間','シミの真上の外壁を外から見る'], ['窓まわりの下か：サッシ上のコーキング・枠の隙間','窓の上・横・下にシミがあれば窓を疑う'], ['雨樋の詰まり・外れ','水が壁を伝っていないか'] ],
+    measure:[ ['被害のある天井 幅×奥行','','例：3600×2700（クロス張替え用）'], ['被害のある壁 幅×高さ','','例：3600×2400'], ['張り替える面の数','箇所','天井1＋壁2 なら 3'] ],
+    shots:[ ['室内のシミ','遠くと近くの2枚'], ['真上の外部','屋根・ベランダ・外壁。三脚で高く'], ['窓まわり','サッシの上のコーキング'], ['天井裏','点検口から。あれば'] ],
+    ask:[ ['いつから？どんな雨の時に漏れる？','強い雨・横なぐり・風向き'], ['晴れの日も濡れることはある？','あれば配管や結露の可能性'], ['過去に修理したことは？','どこを誰が'], ['応急処置は必要？',''], ['天井・壁のクロスも直す？',''], ['予算の目安と、いつまでに？',''] ],
+    cases:[
+      ['屋根', '棟板金の浮き・釘抜け、瓦のズレ・割れ、スレートのひび、谷樋のサビ', '最上階の天井。部屋の真ん中にも出る'],
+      ['ベランダ', '床の防水の切れ、排水口（ドレン）の詰まり、笠木の継ぎ目', 'ベランダ直下の部屋の天井'],
+      ['外壁', 'サイディング目地のコーキング切れ、ひび、換気フード・配管まわりの隙間', '壁の上の方、窓の上'],
+      ['窓まわり', 'サッシ上のコーキング切れ、窓枠の隙間', '窓の上・横・下の壁。横なぐりの雨で出やすい'],
+      ['雨樋', '詰まり・外れで水が壁を伝う', '外壁からの漏れと同じ所'],
+      ['雨以外', '給排水管・エアコンのドレン・結露', '晴れの日も濡れる。雨漏れではない'],
+    ]},
 };
 const TYPE_ORDER=['toilet','bath','wash','kitchen','door','floor','cloth','exterior','leak'];
 /* どの工事でも必ず */
@@ -321,13 +344,15 @@ function renderSheet(){
   const s=state.cur;
   const sec=(b,kind,no,title,inner,cnt)=>`<div class="card sec" id="${b.key}-${kind}"><h2><span class="no">${no}</span>${title} <span class="cnt ${cnt[0]===cnt[1]?'ok':''}">${cnt[0]}/${cnt[1]}</span></h2>${inner}</div>`;
   const html=blocks(s).map(b=>{ const c=counts(s,b);
-    const see=b.see.map(([lab,hint],i)=>{ const k=key(b.key,'see',i); const v=s.see[k]||{}; return `<div class="chk ${v.done?'done':''}"><div class="top"><input type="checkbox" id="c_${k}" data-see="${k}" ${v.done?'checked':''}><label for="c_${k}">${esc(lab)}${hint?`<small>${esc(hint)}</small>`:''}</label></div><input class="memo" data-seememo="${k}" value="${esc(v.memo||'')}" placeholder="気になる点があれば（例：床がふかつく）"></div>`; }).join('');
+    const see=b.see.map(([lab,hint],i)=>{ const k=key(b.key,'see',i); const v=s.see[k]||{}; return `<div class="chk ${v.done?'done':''}"><div class="top"><input type="checkbox" id="c_${k}" data-see="${k}" ${v.done?'checked':''}><label for="c_${k}">${esc(lab)}${hint?`<small>${esc(hint)}</small>`:''}</label></div><input class="memo" data-seememo="${k}" value="${esc(v.memo||'')}" placeholder="気になる点があれば ひとこと"></div>`; }).join('');
     const measure=b.measure.map(([lab,unit,hint],i)=>{ const k=key(b.key,'measure',i); const v=s.dims[k]??''; return `<div class="dim ${String(v).trim()?'done':''}"><label for="d_${k}">${esc(lab)}${hint&&unit?`<small>${esc(hint)}</small>`:''}</label><div class="in"><input id="d_${k}" data-dim="${k}" value="${esc(v)}" ${unit?'type="number" inputmode="numeric"':`placeholder="${esc(hint)}"`}>${unit?`<span>${unit}</span>`:''}</div></div>`; }).join('');
     const shots=b.shots.map(([lab,hint],i)=>{ const k=key(b.key,'shots',i); const p=s.shots[k]; return `<div class="shot ${p?'done':''}"><div class="th">${p?`<img src="${p.data}" alt="">`:'未'}</div><div class="lb">${esc(lab)}${hint?`<small>${esc(hint)}</small>`:''}</div><div class="ops"><label class="btn sm ${p?'':'primary'}">${p?'撮り直す':'📷 撮る'}<input type="file" accept="image/*" capture="environment" data-shot="${k}"></label>${p?`<button class="btn sm danger" data-delshot="${k}">×</button>`:''}</div></div>`; }).join('');
     const ask=b.ask.map(([q,hint],i)=>{ const k=key(b.key,'ask',i); return `<div class="ask"><label for="a_${k}">${esc(q)}${hint?`<small>${esc(hint)}</small>`:''}</label><input id="a_${k}" data-ask="${k}" value="${esc(s.answers[k]||'')}" placeholder="お客様の言葉をそのままメモ"></div>`; }).join('');
-    return `<div class="sheet-head"><h2>${esc(b.name)}</h2>${b.days?`<span class="pill">${esc(b.days)}</span>`:''}</div>
+    const alert=b.alert?`<div class="alert"><h2>⚠ 注意：${esc(b.alert.title)}</h2><ol>${b.alert.items.map((it,i)=>{ const k=key(b.key,'gear',i); const on=s.see[k]?.done; return `<li><label><input type="checkbox" data-see="${k}" ${on?'checked':''}><span class="n">${'①②③④⑤⑥'[i]||i+1}</span>${esc(it)}</label></li>`; }).join('')}</ol></div>`:'';
+    const cases=b.cases?`<div class="card"><h2>よくある${esc(b.name)}の原因 <span class="cnt">お客様への説明にも</span></h2><div class="cases">${b.cases.map(([pl,cause,where])=>`<div class="case"><b>${esc(pl)}</b><span>${esc(cause)}</span><span class="where">${esc(where)}</span></div>`).join('')}</div></div>`:'';
+    return `<div class="sheet-head"><h2>${esc(b.name)}</h2>${b.days?`<span class="pill">${esc(b.days)}</span>`:''}</div>${alert}
       ${b.key!=='common'?`<div class="jump"><button data-jump="${b.key}-see">見る ${c.see[0]}/${c.see[1]}</button><button data-jump="${b.key}-measure">測る ${c.measure[0]}/${c.measure[1]}</button><button data-jump="${b.key}-shots">写真 ${c.shots[0]}/${c.shots[1]}</button><button data-jump="${b.key}-ask">聞く ${c.ask[0]}/${c.ask[1]}</button></div>`:''}
-      ${sec(b,'see','1','見る',see,c.see)}
+      ${sec(b,'see','1','見る',see,c.see)}${cases}
       ${b.measure.length?sec(b,'measure','2','測る',`<div class="tip" style="margin-bottom:8px">単位は mm。分からない所は空欄のまま、写真を撮って先輩に聞く。</div>`+measure,c.measure):''}
       ${sec(b,'shots','3','写真を撮る',shots,c.shots)}
       ${sec(b,'ask','4','聞く',ask,c.ask)}`; }).join('');
@@ -339,7 +364,7 @@ function renderSheet(){
   <div class="card"><h2>メモ</h2><textarea id="memo" placeholder="気づいたこと・先輩に相談したいこと">${esc(s.memo||'')}</textarea></div>
   <div class="actions"><button class="btn sm" id="changeTypes">工事の種類を変更</button><button class="btn primary" style="flex:1" data-go="customer">次へ：お客様情報 →</button></div>`;
   view.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>$('#'+b.dataset.jump)?.scrollIntoView({behavior:'smooth',block:'start'}));
-  view.querySelectorAll('[data-see]').forEach(c=>c.onchange=()=>{ const k=c.dataset.see; s.see[k]={...(s.see[k]||{}),done:c.checked}; c.closest('.chk').classList.toggle('done',c.checked); refreshCounts(); save(); });
+  view.querySelectorAll('[data-see]').forEach(c=>c.onchange=()=>{ const k=c.dataset.see; s.see[k]={...(s.see[k]||{}),done:c.checked}; c.closest('.chk')?.classList.toggle('done',c.checked); refreshCounts(); save(); });
   view.querySelectorAll('[data-seememo]').forEach(i=>i.oninput=()=>{ const k=i.dataset.seememo; s.see[k]={...(s.see[k]||{}),memo:i.value}; save(); });
   view.querySelectorAll('[data-dim]').forEach(i=>i.oninput=()=>{ s.dims[i.dataset.dim]=i.value; i.closest('.dim').classList.toggle('done',!!i.value.trim()); refreshCounts(); save(); });
   view.querySelectorAll('[data-ask]').forEach(i=>i.oninput=()=>{ s.answers[i.dataset.ask]=i.value; refreshCounts(); save(); });
