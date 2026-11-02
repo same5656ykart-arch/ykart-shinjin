@@ -403,6 +403,7 @@ function render(){
   $('main').scrollTop=0;
 }
 
+function bossMail(){ try{ return localStorage.getItem('bossMail')||''; }catch(e){ return ''; } }
 function renderHome(){
   backBtn.hidden=true; tabs.hidden=true;
   titleEl.innerHTML='現地調査ナビ <span class="sub">株式会社ワイケイアート</span>'; saveState.textContent='';
@@ -413,13 +414,15 @@ function renderHome(){
   ${list.length?`<div class="list">${list.map(s=>{const p=progress(s); return `<button class="item" data-open="${s.id}"><div class="t"><b>${esc(typeNames(s).join('・')||'種類未選択')}　${esc(s.customer.name?s.customer.name+' 様':'')}</b><span>${esc(s.customer.date)}　${esc(s.customer.address||'')}</span></div><span class="pill ${p>=100?'ok':''}">${p}%</span></button>`}).join('')}</div>`:`<div class="empty">まだ調査データがありません。<br>上のボタンから始めてください。</div>`}
   <details class="card"><summary style="cursor:pointer;font-weight:700;font-family:var(--font-display)">出発前の持ち物チェック</summary>
     <div class="kit" style="margin-top:10px">${KIT.map((k,i)=>`<label><input type="checkbox" data-kit="${i}" ${state.kit[i]?'checked':''}>${esc(k)}</label>`).join('')}</div></details>
-  <details class="card"><summary style="cursor:pointer;font-weight:700;font-family:var(--font-display)">データの取り込み</summary>
-    <p class="muted">まとめ画面で書き出したJSONファイルを読み込めます。</p>
-    <label class="btn sm">JSONを読み込む<input type="file" id="importFile" accept="application/json,.json" hidden></label></details>`;
+  <details class="card"><summary style="cursor:pointer;font-weight:700;font-family:var(--font-display)">設定・データの取り込み</summary>
+    <div class="field" style="margin-top:10px"><label for="bossMail">上司の送り先（メールアドレス）</label><input id="bossMail" type="email" value="${esc(bossMail())}" placeholder="例：boss@ykart.jp"><span class="muted">「上司に報告する」でスマホの共有が使えない時に、このアドレス宛のメールを作ります。</span></div>
+    <p class="muted" style="margin:12px 0 6px">まとめ画面で書き出したZIP（写真つき）を、別の端末やPCで読み込めます。</p>
+    <label class="btn sm">ZIP / JSON を読み込む<input type="file" id="importFile" accept=".zip,.json,application/zip,application/json" hidden></label></details>`;
   $('#newBtn').onclick=async()=>{ const s=newSurvey(); state.surveys.push(s); state.cur=s; state.tab='sheet'; state.pick=[]; await save(true); render(); };
   view.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{ state.cur=state.surveys.find(s=>s.id===b.dataset.open); state.tab='sheet'; state.pick=null; render(); });
   view.querySelectorAll('[data-kit]').forEach(c=>c.onchange=()=>{ state.kit[c.dataset.kit]=c.checked; try{localStorage.setItem('kit',JSON.stringify(state.kit))}catch(e){} });
-  $('#importFile').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ const d=JSON.parse(await f.text()); const arr=Array.isArray(d)?d:[d]; let n=0; for(const s of arr){ if(!s||!s.id||s.v!==3) continue; const i=state.surveys.findIndex(x=>x.id===s.id); if(i>=0) state.surveys[i]=s; else state.surveys.push(s); await DB.put(s); n++; } toast(n+'件を読み込みました'); render(); }catch(err){ toast('読み込めませんでした'); } };
+  $('#bossMail').onchange=e=>{ try{ localStorage.setItem('bossMail',e.target.value.trim()); }catch(err){} toast('保存しました'); };
+  $('#importFile').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ const s=await importFile(f); const i=state.surveys.findIndex(x=>x.id===s.id); if(i>=0) state.surveys[i]=s; else state.surveys.push(s); await DB.put(s); toast('読み込みました'); render(); }catch(err){ toast('読み込めませんでした（このアプリで書き出したZIPかJSONを選んでください）'); } };
 }
 
 /* 最初の画面：工事の種類 */
@@ -502,6 +505,100 @@ function renderCustomer(){
   bindNav();
 }
 
+
+
+/* ========= 小さなZIP（圧縮なし）。外部ライブラリ不要でオフラインでも動く ========= */
+const CRC_T=(()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); t[n]=c>>>0; } return t; })();
+function crc32(u){ let c=0xFFFFFFFF; for(let i=0;i<u.length;i++) c=CRC_T[(c^u[i])&0xFF]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+function dosTime(d){ return {t:(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1), d:((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate()}; }
+async function makeZip(entries){ // entries: [{name, data: string|Blob|Uint8Array}]
+  const enc=new TextEncoder(); const parts=[]; const cd=[]; let off=0; const {t,d}=dosTime(new Date());
+  const u32=(v)=>[v&255,(v>>>8)&255,(v>>>16)&255,(v>>>24)&255], u16=(v)=>[v&255,(v>>>8)&255];
+  for(const e of entries){
+    const name=enc.encode(e.name); const data=typeof e.data==='string'?enc.encode(e.data):(e.data instanceof Blob?new Uint8Array(await e.data.arrayBuffer()):e.data);
+    const crc=crc32(data);
+    const lh=new Uint8Array([...u32(0x04034b50),...u16(20),...u16(0x0800),...u16(0),...u16(t),...u16(d),...u32(crc),...u32(data.length),...u32(data.length),...u16(name.length),...u16(0)]);
+    parts.push(lh,name,data);
+    cd.push(new Uint8Array([...u32(0x02014b50),...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(t),...u16(d),...u32(crc),...u32(data.length),...u32(data.length),...u16(name.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(off)]),name);
+    off+=lh.length+name.length+data.length;
+  }
+  const cdSize=cd.reduce((a,x)=>a+x.length,0);
+  const end=new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),...u16(entries.length),...u16(entries.length),...u32(cdSize),...u32(off),...u16(0)]);
+  return new Blob([...parts,...cd,end],{type:'application/zip'});
+}
+async function readZip(blob){ // → {name: Uint8Array}（圧縮なしのみ。他のソフトで作り直したZIPは非対応）
+  const buf=new Uint8Array(await blob.arrayBuffer()); const dv=new DataView(buf.buffer); const dec=new TextDecoder();
+  let i=buf.length-22; while(i>=0 && dv.getUint32(i,true)!==0x06054b50) i--; if(i<0) throw new Error('zip');
+  const n=dv.getUint16(i+10,true); let p=dv.getUint32(i+16,true); const out={};
+  for(let k=0;k<n;k++){ if(dv.getUint32(p,true)!==0x02014b50) throw new Error('zip'); const method=dv.getUint16(p+10,true); const size=dv.getUint32(p+24,true); const nl=dv.getUint16(p+28,true), el=dv.getUint16(p+30,true), cl=dv.getUint16(p+32,true); const lo=dv.getUint32(p+42,true); const name=dec.decode(buf.subarray(p+46,p+46+nl));
+    if(method!==0) throw new Error('compressed'); const lnl=dv.getUint16(lo+26,true), lel=dv.getUint16(lo+28,true); const start=lo+30+lnl+lel; out[name]=buf.subarray(start,start+size); p+=46+nl+el+cl; }
+  return out;
+}
+const b64=u=>{ let s=''; for(let i=0;i<u.length;i+=0x8000) s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000)); return btoa(s); };
+
+/* ========= 書き出し（ZIP）・上司へ送る・読み込み ========= */
+const safeName=s=>String(s||'').replace(/[\\/:*?"<>|\s]+/g,'_').slice(0,40)||'noname';
+const dataUrlToBlob=d=>{ const [h,b]=d.split(','); const bin=atob(b); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return new Blob([u],{type:h.match(/data:(.*?);/)[1]}); };
+function pad2(n){ return String(n).padStart(2,'0'); }
+/* 見積もりアプリ向けの、項目名がそのまま分かるJSON */
+function buildExport(s){
+  const c=s.customer; const photos=[]; let pn=0;
+  const works=blocks(s).map(b=>{
+    const sel={}; (b.intro||[]).forEach((g,gi)=>{ sel[g.title]=s.answers[key(b.key,'intro',gi)]||''; });
+    const shots=b.shots.map(([lab],i)=>{ const p=s.shots[key(b.key,'shots',i)]; if(!p) return {項目:lab,ファイル:''}; pn++; const f=`写真/${pad2(pn)}_${safeName(b.name)}_${safeName(lab)}.jpg`; photos.push({f,data:p.data}); return {項目:lab,ファイル:f}; });
+    const cr=calcRows(b,s)||[];
+    return { 種類コード:b.key, 種類:b.name, 選択:sel,
+      見る:b.see.map(([lab],i)=>{ const v=s.see[key(b.key,'see',i)]||{}; return {項目:lab,確認済:!!v.done,メモ:v.memo||''}; }),
+      採寸:b.measure.map(([lab,unit],i)=>({項目:lab,値:s.dims[key(b.key,'measure',i)]??'',単位:unit||''})),
+      計算:cr.map(([n,a,k])=>({項目:n,実平米:+a.toFixed(2),倍率:k,提示平米:+(a*k).toFixed(2)})),
+      写真:shots,
+      聞く:b.ask.map(([q],i)=>({質問:q,回答:s.answers[key(b.key,'ask',i)]||''})) };
+  });
+  const extra=s.extra.map(p=>{ pn++; const f=`写真/${pad2(pn)}_その他_${safeName(p.caption)||pn}.jpg`; photos.push({f,data:p.data}); return {ファイル:f,説明:p.caption||''}; });
+  const json={ 形式:'ykart-genchi-v1', 書き出し日時:new Date().toISOString(), 調査日:c.date, 担当者:c.staff,
+    お客様:{名前:c.name,住所:c.address,電話:c.tel,築年数:c.built,メモ:c.note},
+    工事:works, その他の写真:extra, メモ:s.memo||'', 未入力:missing(s), 報告文:report(s) };
+  // アプリに戻すための元データ（写真は上のファイル名で参照）
+  const app=JSON.parse(JSON.stringify(s)); Object.keys(app.shots).forEach(k=>{ const b=blocks(s).find(x=>k.startsWith(x.key+'.')); const i=+k.split('.')[2]; const w=works.find(x=>x.種類コード===b.key); app.shots[k]={file:w.写真[i].ファイル,at:s.shots[k].at}; }); app.extra=app.extra.map((p,i)=>({id:p.id,caption:p.caption,file:extra[i].ファイル}));
+  json._app=app;
+  return {json,photos};
+}
+function exportName(s,ext){ return `現調_${s.customer.date}_${safeName(s.customer.name)}_${safeName(typeNames(s).join('・'))}.${ext}`; }
+async function buildZip(s){
+  const {json,photos}=buildExport(s);
+  const entries=[{name:'現調データ.json',data:JSON.stringify(json,null,1)},{name:'報告書.txt',data:json.報告文}];
+  photos.forEach(p=>entries.push({name:p.f,data:dataUrlToBlob(p.data)}));
+  return makeZip(entries);
+}
+/* ファイルを保存：公開プレビューでは claude の保存機能、通常のブラウザではダウンロード */
+async function saveFile(filename, blob){
+  try{ const dl=window.claude?.use ? await window.claude.use('downloads') : null; if(dl){ await dl.save({filename,data:blob}); return 'saved'; } }catch(e){ if(e&&e.code==='declined') return 'declined'; }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800); return 'saved';
+}
+async function exportZip(s){
+  toast('まとめています…'); try{ const blob=await buildZip(s); const r=await saveFile(exportName(s,'zip'),blob); toast(r==='saved'?'書き出しました':'キャンセルしました'); }catch(e){ toast('書き出せませんでした'); }
+}
+/* 上司に送る：スマホの共有（LINE・メールなど）→ だめならメール作成 → だめならコピー */
+async function sendToBoss(s){
+  const text=report(s); const title=`【現調】${typeNames(s).join('・')} ${s.customer.name||''}様 ${s.customer.date}`;
+  let boss=''; try{ boss=localStorage.getItem('bossMail')||''; }catch(e){}
+  try{ if(navigator.share){ const blob=await buildZip(s); const file=new File([blob],exportName(s,'zip'),{type:'application/zip'}); const data=(navigator.canShare&&navigator.canShare({files:[file]}))?{title,text,files:[file]}:{title,text}; await navigator.share(data); toast('送りました'); return; } }catch(e){ if(e&&e.name==='AbortError'){ toast('キャンセルしました'); return; } }
+  try{ await navigator.clipboard.writeText(text); }catch(e){}
+  if(boss){ location.href=`mailto:${encodeURIComponent(boss)}?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(text.slice(0,1800))}`; toast('メールを作成しました。報告文はコピー済みです'); }
+  else toast('報告文をコピーしました。LINEやメールに貼ってください。送り先はホーム画面で設定できます');
+}
+/* 読み込み：ZIP（写真つき）か JSON */
+async function importFile(f){
+  let s=null, zip=null; const dec=new TextDecoder();
+  if(/\.zip$/i.test(f.name)){ zip=await readZip(f); const j=zip['現調データ.json']; if(!j) throw new Error('no json'); s=JSON.parse(dec.decode(j))._app; }
+  else { const d=JSON.parse(await f.text()); s=d._app||d; }
+  if(!s||!s.id||s.v!==3) throw new Error('format');
+  if(zip){ for(const k of Object.keys(s.shots)){ const u=s.shots[k].file&&zip[s.shots[k].file]; if(u) s.shots[k]={data:'data:image/jpeg;base64,'+b64(u),at:s.shots[k].at}; else delete s.shots[k]; }
+    s.extra=s.extra.map(p=>{ const u=p.file&&zip[p.file]; return u?{id:p.id,caption:p.caption,data:'data:image/jpeg;base64,'+b64(u)}:null; }).filter(Boolean); }
+  else { Object.keys(s.shots).forEach(k=>{ if(!s.shots[k].data) delete s.shots[k]; }); s.extra=s.extra.filter(p=>p.data); }
+  return s;
+}
+
 function report(s){
   const L=[]; const c=s.customer;
   L.push(`【現地調査報告】${typeNames(s).join('・')||'（種類未選択）'}　${c.name||'（お名前未入力）'} 様`);
@@ -531,12 +628,13 @@ function renderSummary(){
     ${m.length?`<p class="muted" style="margin:10px 0 4px">帰る前に確認（お客様の前で埋めるのが一番早い）：</p><ul class="miss">${m.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:`<p style="margin:10px 0 0;color:var(--ok);font-weight:700">全部そろっています。お疲れさまでした。</p>`}</div>
   <div class="tip"><b>帰る前のひとこと</b>「本日はありがとうございました。社内で確認して、〇日までにご連絡します」。分からなかった事は正直に「確認して連絡します」。</div>
   <div class="card"><h2>報告文</h2><pre class="report" id="reportText">${esc(report(s))}</pre>
-    <div class="actions" style="margin-top:10px"><button class="btn primary" id="copyBtn">報告文をコピー</button><button class="btn" id="exportBtn">写真つきデータを書き出す（JSON）</button></div>
-    <p class="muted" style="margin:8px 0 0">コピーした文章はLINEやメールにそのまま貼れます。</p></div>
+    <div class="actions" style="margin-top:10px"><button class="btn primary" id="sendBtn" style="flex:1 1 100%">📨 上司に報告する</button><button class="btn" id="exportBtn" style="flex:1">資料をまとめて書き出す（ZIP）</button><button class="btn" id="copyBtn">報告文をコピー</button></div>
+    <p class="muted" style="margin:8px 0 0">「上司に報告する」はスマホなら LINE やメールの選択画面が開き、報告文と資料ZIPが送れます。ZIPには見積もりアプリ用のデータ（JSON）・報告書・写真が入っています。</p></div>
   <div class="card">${state.confirmDel===s.id?`<div class="confirm"><span>この調査データを削除します。元に戻せません。</span><button class="btn sm danger" id="delYes">削除する</button><button class="btn sm" id="delNo">やめる</button></div>`:`<button class="btn danger sm" id="delBtn">この調査を削除</button>`}</div>
   <div class="actions"><button class="btn" data-go="customer">← お客様情報</button></div>`;
   $('#copyBtn').onclick=async()=>{ const t=report(s); try{ await navigator.clipboard.writeText(t); toast('コピーしました'); }catch(e){ const r=document.createRange(); r.selectNodeContents($('#reportText')); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); toast('文章を選択しました。長押しでコピーしてください'); } };
-  $('#exportBtn').onclick=()=>{ const blob=new Blob([JSON.stringify(s,null,1)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`genchi_${s.customer.date}_${(s.customer.name||'noname').replace(/\s+/g,'')}.json`; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500); toast('書き出しました'); };
+  $('#exportBtn').onclick=()=>exportZip(s);
+  $('#sendBtn').onclick=()=>sendToBoss(s);
   const db=$('#delBtn'); if(db) db.onclick=()=>{ state.confirmDel=s.id; renderSummary(); };
   const dy=$('#delYes'); if(dy) dy.onclick=async()=>{ await DB.del(s.id); state.surveys=state.surveys.filter(x=>x.id!==s.id); state.cur=null; state.confirmDel=null; toast('削除しました'); render(); };
   const dn=$('#delNo'); if(dn) dn.onclick=()=>{ state.confirmDel=null; renderSummary(); };
