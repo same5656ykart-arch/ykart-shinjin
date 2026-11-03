@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>現調ナビをホーム画面に追加する方法</title>
+<style>
+:root{--o:#f26f21;--g:#5fae3a;--y:#f6c21c;--fg:#1d2026;--muted:#5e636c;--line:#d8d8d4;--bg:#f6f6f3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"BIZ UDPGothic","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;font-size:15px;line-height:1.6}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 40px}
+header{display:flex;align-items:center;gap:12px;padding:10px 0 14px;border-bottom:3px solid var(--o);margin-bottom:16px}
+header img{height:44px}
+header h1{font-size:19px;margin:0;line-height:1.3}
+header small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+.url{background:#fff;border:2px dashed var(--o);border-radius:10px;padding:12px 14px;margin:0 0 18px;word-break:break-all}
+.url b{display:block;font-size:13px;color:var(--o);margin-bottom:4px}
+.url code{font-size:15px;font-weight:700}
+h2{font-size:17px;margin:26px 0 10px;padding-left:10px;border-left:5px solid var(--o)}
+h2.android{border-left-color:var(--g)}
+.step{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center}
+.step .no{display:inline-flex;width:26px;height:26px;border-radius:999px;background:var(--o);color:#fff;font-weight:700;align-items:center;justify-content:center;margin-right:8px}
+.android .step .no{background:var(--g)}
+.step p{margin:0;font-size:14.5px}
+.step p b{display:block;font-size:16px;margin-bottom:4px}
+.step small{color:var(--muted);display:block;margin-top:4px;font-size:12.5px}
+/* スマホの絵 */
+.phone{width:150px;height:260px;border:6px solid #2b2b2b;border-radius:26px;background:#fff;position:relative;overflow:hidden;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+.phone .scr{position:absolute;inset:0;display:flex;flex-direction:column}
+.phone .app{flex:1;background:linear-gradient(#fff,#f3f3f0);padding:8px;display:flex;flex-direction:column;gap:6px}
+.phone .app .bar{height:8px;border-radius:4px;background:#e4e4e0}
+.phone .app .bar.o{background:var(--o);width:60%}
+.phone .app .tile{flex:1;border-radius:6px;background:#eee;border:2px solid var(--o)}
+.phone .bottom{height:42px;background:#f7f7f7;border-top:1px solid #ddd;display:flex;align-items:center;justify-content:space-around;padding:0 6px}
+.phone .ic{width:18px;height:18px;color:#1a73e8}
+.hl{outline:3px solid var(--o);outline-offset:3px;border-radius:6px;animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{outline-color:var(--o)}50%{outline-color:var(--y)}}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#f2f2f2;border-radius:14px 14px 0 0;padding:8px 8px 10px;font-size:9.5px}
+.sheet .row{display:flex;align-items:center;gap:6px;background:#fff;padding:6px 8px;border-radius:6px;margin-top:4px;color:#222}
+.sheet .row .sq{width:14px;height:14px;border:1.5px solid #222;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1}
+.sheet .row.pick{font-weight:700}
+.dialog{position:absolute;left:4px;right:4px;top:30px;background:#fff;border-radius:10px;padding:7px 6px;font-size:9.5px;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.dialog .top{display:flex;justify-content:space-between;align-items:center;font-weight:700;color:#1a73e8;margin-bottom:6px;font-size:7.5px;white-space:nowrap;gap:3px}
+.dialog .top .add{background:var(--o);color:#fff;padding:2px 5px;border-radius:4px;flex:0 0 auto}
+.dialog .body{display:flex;gap:6px;align-items:center}
+.dialog .body img{width:30px;height:30px;border-radius:7px;border:1px solid #ddd}
+.dialog .body span{font-weight:700;color:#222}
+.home{position:absolute;inset:0;background:linear-gradient(160deg,#ffe9d6,#dbeedc);padding:14px 10px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;align-content:start}
+.home div{aspect-ratio:1;border-radius:9px;background:rgba(255,255,255,.55)}
+.home .me{background:#fff;border:2px solid var(--o);display:flex;align-items:center;justify-content:center;overflow:hidden;padding:3px;position:relative}
+.home .me img{width:100%;height:100%;object-fit:contain}
+.home .me::after{content:"現調ナビ";position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:3px;font-size:7px;white-space:nowrap;color:#222;font-weight:700}
+.menu{position:absolute;right:6px;top:30px;background:#fff;border-radius:8px;padding:6px;box-shadow:0 4px 14px rgba(0,0,0,.2);font-size:9.5px;width:112px}
+.menu div{padding:5px 6px;border-radius:5px}
+.menu .pick{background:#fff1e8;font-weight:700;outline:2px solid var(--o)}
+.topbar{height:30px;background:#fff;border-bottom:1px solid #ddd;display:flex;align-items:center;justify-content:flex-end;padding:0 8px;gap:6px;font-size:10px;color:#333}
+.dots{width:16px;height:16px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px}
+.dots i{width:3px;height:3px;background:#333;border-radius:50%}
+.note{background:#fff7e6;border:1px solid #f3d9a4;border-radius:10px;padding:10px 12px;font-size:13.5px;margin-top:18px}
+.note b{display:block;color:#a05a00;margin-bottom:4px}
+@media print{body{background:#fff}.hl{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><img src="logo.png" alt=""><h1>現調ナビを<br>スマホのホーム画面に追加する<small>株式会社ワイケイアート　現地調査アプリ</small></h1></header>
+
+  <div class="url"><b>まず、このアドレスをスマホで開きます</b><code>https://same5656ykart-arch.github.io/ykart-shinjin/</code><small style="color:var(--muted);display:block;margin-top:4px">LINEで届いたリンクをそのまま開くとLINEの中のブラウザで開きます。その場合は右下の「…」→「Safariで開く」（Androidは「他のアプリで開く」→ Chrome）を押してから下の手順へ。</small></div>
+
+  <h2>iPhone（Safari）の場合</h2>
+
+  <div class="step">
+    <div class="phone"><div class="scr">
+      <div class="app"><div class="bar o"></div><div class="bar"></div><div class="tile"></div><div class="tile"></div></div>
+      <div class="bottom">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        <svg class="ic hl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M5 12v8h14v-8"/></svg>
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z M4 9h16"/></svg>
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="16" height="16" rx="2" fill="#fff"/></svg>
+      </div>
+    </div></div>
+    <p><span class="no">1</span><b>画面の下にある「共有」ボタンを押す</b>四角から矢印が上に出ているマークです。<small>ボタンが隠れている時は、画面を少し上にスクロールすると出てきます。</small></p>
+  </div>
+
+  <div class="step">
+    <div class="phone"><div class="scr">
+      <div class="app" style="filter:brightness(.7)"><div class="bar o"></div><div class="bar"></div><div class="tile"></div></div>
+      <div class="sheet">
+        <div class="row"><span class="sq">↑</span>コピー</div>
+        <div class="row"><span class="sq">☆</span>お気に入りに追加</div>
+        <div class="row pick hl"><span class="sq">＋</span>ホーム画面に追加</div>
+        <div class="row"><span class="sq">⌕</span>ページを検索</div>
+      </div>
+    </div></div>
+    <p><span class="no">2</span><b>メニューを下にスクロールして「ホーム画面に追加」を押す</b>四角に「＋」のマークです。<small>少し下の方にあります。見つからない時はゆっくりスクロールしてください。</small></p>
+  </div>
+
+  <div class="step">
+    <div class="phone"><div class="scr">
+      <div class="app" style="filter:brightness(.7)"><div class="bar o"></div><div class="bar"></div><div class="tile"></div></div>
+      <div class="dialog">
+        <div class="top"><span>キャンセル</span><span style="color:#222">ホーム画面に追加</span><span class="add hl">追加</span></div>
+        <div class="body"><img src="icon-192.png" alt=""><span>現調ナビ</span></div>
+      </div>
+    </div></div>
+    <p><span class="no">3</span><b>右上の「追加」を押す</b>名前は「現調ナビ」のままでOKです。</p>
+  </div>
+
+  <div class="step">
+    <div class="phone"><div class="scr">
+      <div class="home"><div></div><div></div><div></div><div></div><div></div><div class="me hl"><img src="icon-192.png" alt=""></div><div></div><div></div></div>
+    </div></div>
+    <p><span class="no">4</span><b>ホーム画面にアイコンが出ます</b>次からはこのアイコンを押すだけでアプリが開きます。一度開けば、電波の弱い現場でも動きます。</p>
+  </div>
+
+  <h2 class="android">Android（Chrome）の場合</h2>
+
+  <div class="android">
+  <div class="step">
+    <div class="phone"><div class="scr">
+      <div class="topbar">ykart-shinjin <span class="dots hl"><i></i><i></i><i></i></span></div>
+      <div class="app"><div class="bar o"></div><div class="bar"></div><div class="tile"></div><div class="tile"></div></div>
+    </div></div>
+    <p><span class="no">1</span><b>右上の「︙」（点が3つ）を押す</b></p>
+  </div>
+
+  <div class="step">
+    <div class="phone"><div class="scr">
+      <div class="topbar">ykart-shinjin <span class="dots"><i></i><i></i><i></i></span></div>
+      <div class="app" style="filter:brightness(.7)"><div class="bar o"></div><div class="bar"></div><div class="tile"></div></div>
+      <div class="menu"><div>新しいタブ</div><div>ブックマーク</div><div>履歴</div><div class="pick">ホーム画面に追加</div><div>PC版サイト</div></div>
+    </div></div>
+    <p><span class="no">2</span><b>「ホーム画面に追加」を押す</b><small>機種によっては「アプリをインストール」と出ます。どちらでも同じです。</small></p>
+  </div>
+
+  <div class="step">
+    <div class="phone"><div class="scr">
+      <div class="app" style="filter:brightness(.7)"><div class="bar o"></div><div class="bar"></div><div class="tile"></div></div>
+      <div class="dialog" style="top:90px">
+        <div class="body"><img src="icon-192.png" alt=""><span>現調ナビ</span></div>
+        <div class="top" style="justify-content:flex-end;margin-top:8px"><span>キャンセル　</span><span class="add hl" style="background:var(--g)">追加</span></div>
+      </div>
+    </div></div>
+    <p><span class="no">3</span><b>「追加」を押す</b>ホーム画面にアイコンが出ます。</p>
+  </div>
+  </div>
+
+  <div class="note"><b>うまくいかない時</b>
+  ・「ホーム画面に追加」が出ない → LINEやメールの中のブラウザで開いています。「Safariで開く」「Chromeで開く」をしてからやり直してください<br>
+  ・アイコンが「現」の文字や白い四角 → 一度アイコンを削除して、もう一度追加してください<br>
+  ・分からない時は、この画面を見せてもらえれば案内します</div>
+</div>
+</body>
+</html>
