@@ -22,7 +22,7 @@ Claude Code の別セッション・別アカウントで続きを編集する�
 |---|---|
 | `index.html` | アプリ本体（HTML/CSS/JS を1ファイルに）。外部ライブラリなし |
 | `logo.png` / `hero.jpg` | ロゴ、トップの背景写真 |
-| `img/<種類>.jpg` | 工事を選ぶタイルの写真（toilet, bath, wash, kitchen, door, floor, cloth, exterior, leak） |
+| `img/<種類>.jpg` | 工事を選ぶタイルの写真（toilet, bath, wash, kitchen, door, floor, cloth, exterior, leak, fence, window, entrance, balcony, carport, parking, boiler, ecocute, washitsu, bathx） |
 | `manifest.json` / `sw.js` | ホーム画面追加・オフライン用。`sw.js` の `CACHE` 名は更新のたびに v を上げる |
 | `README.md` | 使い方・公開方法 |
 
