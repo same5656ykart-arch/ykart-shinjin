@@ -246,6 +246,14 @@ header.bar.home{display:none}
 .homecard summary{cursor:pointer;font-weight:700;font-family:var(--font-display);list-style:none;display:flex;align-items:center;gap:8px}
 .homecard summary::before{content:"▸";color:var(--muted);transition:transform .15s}
 .homecard[open] summary::before{transform:rotate(90deg)}
+.gjump{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.gjump::-webkit-scrollbar{display:none}
+.gjump button{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:700;display:flex;gap:6px;align-items:center}
+.gjump button small{background:var(--accent);color:#fff;border-radius:999px;min-width:18px;height:18px;font-size:11px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
+.gjump button small:empty{display:none}
+h3.grp{font-size:16px;margin-top:6px;padding-left:10px;border-left:4px solid var(--accent);display:flex;align-items:baseline;gap:8px}
+h3.grp .cnt{font-size:12px;color:var(--muted);font-weight:400}
+.pickbar{position:sticky;bottom:0;z-index:4;background:linear-gradient(180deg,transparent,var(--bg) 30%);padding:12px 0 calc(8px + env(safe-area-inset-bottom,0px));margin-top:-6px}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
 </style>
 </head>
@@ -461,7 +469,7 @@ const TYPES = {
     measure:[ ['幅','mm','柱の外から外まで'], ['奥行き','mm',''], ['高さ（地面から屋根の下端）','mm',''], ['車の全高','mm','背の高い車なら'] ],
     shots:[ ['全体','道路側から'], ['柱の根元',''], ['車を停めた状態','余裕が分かるように'], ['隣の家・電線との距離',''] ],
     ask:[ ['一番困っていることは？','古い・屋根が割れた・狭い など'], ['車の買い替え予定は？','大きくなるならサイズを変える'], ['雪や強風が心配？','強度の高いタイプがある'], ['予算の目安と、いつまでに？',''] ]},
-  parking:{ name:'駐車場作成', days:'工事 3〜7日（コンクリートは乾く期間あり）',
+  parking:{ name:'駐車場作成', days:'工事 3〜7日',
     see:[ ['今の地面','土 / 砂利 / 芝 / 植木 / ブロック塀。撤去する物があるか'], ['道路との段差と縁石','歩道の縁石を低くする工事（切り下げ）が必要か。役所への申請がいる'], ['雨水の流れ','水がどこへ流れるか。道路や隣に流さない勾配がとれるか'], ['隣との境界','杭や印。ブロック塀はどちらの物か'], ['地面に埋まっている物','水道の管・排水のマス・メーター'] ],
     measure:[ ['幅','mm','道路に面した長さ'], ['奥行き','mm',''], ['道路との高低差','mm','高い・低いもメモ'], ['前の道路の幅','mm','車の出し入れができるか'] ],
     shots:[ ['全体（道路側から）',''], ['道路との境目・縁石',''], ['隣との境界',''], ['排水マス・メーター','地面にあれば'] ],
@@ -494,7 +502,15 @@ const TYPES = {
     shots:[ ['浴室 全体','ドアを開けて'], ['広げる方向の壁（浴室側）',''], ['広げる方向の壁（反対側）','洗面室や押入れの中から'], ['洗面室 全体',''], ['窓と給湯器の位置（外から）',''], ['天井裏','点検口があれば。柱や筋交いが見える'] ],
     ask:[ ['なぜ広げたい？','浴槽が小さい・介護・ゆったり入りたい など'], ['希望のサイズは？','1616より大きくすると工事が大きくなる'], ['洗面室が狭くなってもいい？',''], ['工事中（5〜10日）お風呂はどうする？',''], ['予算の目安と、いつまでに？',''] ]},
 };
-const TYPE_ORDER=['toilet','bath','bathx','wash','kitchen','door','floor','cloth','washitsu','exterior','leak','fence','window','entrance','balcony','carport','parking','boiler','ecocute'];
+/* 工事の大枠（選ぶ画面の見出し） */
+const GROUPS=[
+  {key:'water', name:'水まわり工事', types:['toilet','bath','bathx','wash','kitchen','boiler','ecocute']},
+  {key:'interior', name:'内装工事', types:['door','floor','cloth','washitsu']},
+  {key:'opening', name:'外装工事（窓・ドア・バルコニー）', types:['window','entrance','balcony']},
+  {key:'garden', name:'外構工事', types:['fence','carport','parking']},
+  {key:'paint', name:'外壁塗装・雨漏れ', types:['exterior','leak']},
+];
+const TYPE_ORDER=GROUPS.flatMap(g=>g.types);
 /* どの工事でも必ず */
 const COMMON = { name:'どの工事でも',
   see:[ ['工事の車を停められる場所はあるか',''], ['玄関から工事場所までの通り道','幅・曲がり角・階段。大きな物が運べるか'] ],
@@ -682,11 +698,14 @@ function renderPick(){
   const s=state.cur; const sel=state.pick ?? [...(s.types||[])]; state.pick=sel;
   view.innerHTML=`
   <div class="home-hero"><h2>今日は何の工事ですか？</h2><p class="muted">当てはまるものを選んでください（複数OK）。</p></div>
-  <div class="types">${TYPE_ORDER.map(t=>{ const [en,col,bg]=TILE[t]; return `<button data-type="${t}" aria-pressed="${sel.includes(t)}" style="--tc:${col};--tb:${bg};background-image:url('img/${t}.jpg'),linear-gradient(135deg,${bg},#fff)"><span class="ic">${icon(t)}</span><span class="badge">✓</span><span class="band"><b>${esc(TYPES[t].name)}</b><small>${en}</small><em>${esc(TYPES[t].days)}</em></span></button>`; }).join('')}</div>
-  <button class="btn primary block" id="pickOk" ${sel.length?'':'disabled'}>${sel.length?`${sel.map(t=>TYPES[t].name).join('・')} の調査シートを開く →`:'種類を選んでください'}</button>
+  <div class="gjump">${GROUPS.map(g=>`<button data-gjump="${g.key}">${esc(g.name.split('（')[0])}<small>${g.types.filter(t=>sel.includes(t)).length||''}</small></button>`).join('')}</div>
+  ${GROUPS.map(g=>`<h3 class="grp" id="grp-${g.key}">${esc(g.name)} <span class="cnt">${g.types.length}種</span></h3>
+  <div class="types">${g.types.map(t=>{ const [en,col,bg]=TILE[t]; return `<button data-type="${t}" aria-pressed="${sel.includes(t)}" style="--tc:${col};--tb:${bg};background-image:url('img/${t}.jpg'),linear-gradient(135deg,${bg},#fff)"><span class="ic">${icon(t)}</span><span class="badge">✓</span><span class="band"><b>${esc(TYPES[t].name)}</b><small>${en}</small><em>${esc(TYPES[t].days)}</em></span></button>`; }).join('')}</div>`).join('')}
+  <div class="pickbar"><button class="btn primary block" id="pickOk" ${sel.length?'':'disabled'}>${sel.length?`${sel.map(t=>TYPES[t].name).join('・')} の調査シートを開く →`:'種類を選んでください'}</button></div>
   ${(s.types||[]).length?`<button class="btn block" id="pickCancel">変更しない</button>`:''}`;
+  view.querySelectorAll('[data-gjump]').forEach(b=>b.onclick=()=>$('#grp-'+b.dataset.gjump)?.scrollIntoView({behavior:'smooth',block:'start'}));
   view.querySelectorAll('[data-type]').forEach(b=>{ const im=new Image(); im.onerror=()=>b.classList.add('nophoto'); im.src=`img/${b.dataset.type}.jpg`; });
-  view.querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>{ const t=b.dataset.type; const i=sel.indexOf(t); if(i>=0) sel.splice(i,1); else sel.push(t); sel.sort((a,b)=>TYPE_ORDER.indexOf(a)-TYPE_ORDER.indexOf(b)); renderPick(); });
+  view.querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>{ const t=b.dataset.type; const i=sel.indexOf(t); if(i>=0) sel.splice(i,1); else sel.push(t); sel.sort((a,b)=>TYPE_ORDER.indexOf(a)-TYPE_ORDER.indexOf(b)); const y=$('main').scrollTop; renderPick(); $('main').scrollTop=y; });
   $('#pickOk').onclick=()=>{ if(!sel.length) return; s.types=[...sel]; state.pick=null; state.tab='sheet'; save(true); render(); };
   const pc=$('#pickCancel'); if(pc) pc.onclick=()=>{ state.pick=null; render(); };
 }
