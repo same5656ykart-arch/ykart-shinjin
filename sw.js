@@ -1,5 +1,5 @@
 // 現場で電波が弱くても開けるように、アプリ本体をキャッシュする
-const CACHE = 'genchi-navi-v33';
+const CACHE = 'genchi-navi-v34';
 const FILES = ['./', './index.html', './manifest.json', './icon.svg', './logo.png', './hero.jpg'];
 const LIBS = ['./img/toilet.jpg','./img/bath.jpg','./img/wash.jpg','./img/kitchen.jpg','./img/door.jpg','./img/floor.jpg','./img/cloth.jpg','./img/exterior.jpg','./img/leak.jpg','./img/fence.jpg','./img/window.jpg','./img/entrance.jpg','./img/balcony.jpg','./img/carport.jpg','./img/parking.jpg','./img/boiler.jpg','./img/ecocute.jpg','./img/washitsu.jpg','./img/bathx.jpg'];
 
@@ -11,8 +11,11 @@ self.addEventListener('activate', e => {
 });
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // HTML と本体ファイルはブラウザのキャッシュを使わず、必ずサーバーの最新を取りに行く
+  const url = new URL(e.request.url);
+  const fresh = (e.request.mode === 'navigate' || /\/(index\.html|sw\.js|manifest\.json)?$/.test(url.pathname)) ? new Request(e.request, { cache: 'no-store' }) : e.request;
   e.respondWith(
-    fetch(e.request).then(res => {
+    fetch(fresh).then(res => {
       if (res.ok && (new URL(e.request.url).origin === location.origin || LIBS.includes(e.request.url))) {
         const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy));
       }

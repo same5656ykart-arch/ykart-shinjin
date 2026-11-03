@@ -926,7 +926,11 @@ backBtn.onclick=async()=>{ if(state.cur){ await save(true); } state.cur=null; st
   state.surveys=(await DB.all()).filter(s=>s.v===3);   // 旧形式のデータは表示しない
   render();
   if(!DB.ok) toast('この環境では保存できません。入力内容は画面を閉じると消えます');
-  if('serviceWorker' in navigator && location.protocol==='https:'){ try{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }catch(e){} }
+  if('serviceWorker' in navigator && location.protocol==='https:'){ try{
+    navigator.serviceWorker.register('sw.js').then(r=>{ r.update().catch(()=>{}); }).catch(()=>{});
+    // 新しい版が入ったら、1回だけ自動で読み直す
+    let reloaded=false; navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(reloaded) return; reloaded=true; if(navigator.serviceWorker.controller) location.reload(); });
+  }catch(e){} }
 })();
 </script>
 </body>
