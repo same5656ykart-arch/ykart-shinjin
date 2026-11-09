@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f26f21">
+<title>見積ナビ（試作）</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
+<style>
+/* 現調ナビと同じ配色。PCでも使うので横幅は広め */
+:root{
+  --bg:#f3f3f0; --surface:#ffffff; --surface2:#e9eae6; --line:#d2d4ce; --fg:#1d2026; --muted:#5e636c;
+  --accent:#f26f21; --accent-fg:#ffffff; --green:#5fae3a; --green-bg:#eef6e8; --sun:#f6c21c;
+  --ok:#5fae3a; --bad:#d9381e; --bad-bg:#fdeae5; --tip:#fff4ec; --tip-line:#f6c9ad; --auto:#e8f0fb; --auto-fg:#2b5aa3;
+  --font-body:"BIZ UDPGothic","Hiragino Sans","Noto Sans JP",system-ui,sans-serif; --font-display:"Zen Kaku Gothic New","BIZ UDPGothic",sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#15171b; --surface:#1f2228; --surface2:#2a2e36; --line:#3a3f49; --fg:#eceef1; --muted:#a3a8b3; --accent:#ff9450; --accent-fg:#1d2026; --green:#8fd16a; --green-bg:#243120; --bad:#ff8c74; --bad-bg:#3a2520; --tip:#3a2a20; --tip-line:#6b4a35; --auto:#20304a; --auto-fg:#9bbcf0; color-scheme:dark } }
+:root[data-theme="dark"]{ --bg:#15171b; --surface:#1f2228; --surface2:#2a2e36; --line:#3a3f49; --fg:#eceef1; --muted:#a3a8b3; --accent:#ff9450; --accent-fg:#1d2026; --green:#8fd16a; --green-bg:#243120; --bad:#ff8c74; --bad-bg:#3a2520; --tip:#3a2a20; --tip-line:#6b4a35; --auto:#20304a; --auto-fg:#9bbcf0; color-scheme:dark }
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:14px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+h1,h2,h3{font-family:var(--font-display);margin:0;line-height:1.3;text-wrap:balance}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 8px;width:100%;min-width:0}
+input[type=number]{text-align:right;font-variant-numeric:tabular-nums}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+[hidden]{display:none!important}
+header.bar{background:var(--surface);border-bottom:3px solid var(--accent);position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;align-items:center;gap:10px;min-height:52px;
+  padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.bar img{height:30px}
+header.bar h1{font-size:16px;color:var(--green)}
+header.bar h1 small{font-size:11px;color:var(--muted);font-weight:400;margin-left:6px}
+header.bar .sp{flex:1}
+header.bar button{background:transparent;border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:13px;white-space:nowrap}
+main{padding-block:14px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.view{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card h2{font-size:16px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h2 .cnt{font-size:12px;color:var(--muted);font-weight:400;margin-left:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:9px 14px;font-weight:700;font-size:14px;min-height:40px}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.green{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.sm{padding:5px 9px;min-height:30px;font-size:12.5px;font-weight:400}
+.btn.block{width:100%}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.muted{color:var(--muted);font-size:13px}
+.tip{background:var(--tip);border:1px solid var(--tip-line);border-radius:8px;padding:9px 12px;font-size:13px}
+.tip b{color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:10px}
+.row > *{flex:1 1 160px;min-width:0}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:11.5px;color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;text-align:left;width:100%}
+.item b{font-family:var(--font-display);font-size:15px}
+.item span{font-size:12px;color:var(--muted);display:block}
+.item .amt{font-variant-numeric:tabular-nums;font-weight:700;text-align:right}
+.pill{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--muted);white-space:nowrap}
+.pill.auto{background:var(--auto);color:var(--auto-fg)}
+.pill.ok{background:var(--green-bg);color:var(--green)}
+.tscroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{border-bottom:1px solid var(--line);padding:6px 6px;text-align:left;vertical-align:middle}
+th{font-size:11.5px;color:var(--muted);font-weight:400;white-space:nowrap;background:var(--surface)}
+td.num,th.num{text-align:right;white-space:nowrap}
+td input,td select{padding:5px 6px;font-size:13px}
+td input.q{width:70px}
+td input.p{width:96px}
+tr.sub td{background:var(--surface2);font-weight:700}
+.tot{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px}
+.tot div{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface)}
+.tot div small{display:block;font-size:11px;color:var(--muted)}
+.tot div b{font-size:17px;font-variant-numeric:tabular-nums}
+.tot div.g b{color:var(--green)}
+.gl{color:var(--green)}
+.src{font-size:12px;color:var(--auto-fg);background:var(--auto);border-radius:6px;padding:2px 6px}
+.badge{font-size:11px;border-radius:999px;padding:1px 7px;background:var(--surface2);color:var(--muted)}
+details.card summary{cursor:pointer;font-weight:700;font-family:var(--font-display);list-style:none;display:flex;align-items:center;gap:8px}
+details.card summary::before{content:"▸";color:var(--muted);transition:transform .15s}
+details.card[open] summary::before{transform:rotate(90deg)}
+.gen{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.gen .g{border:1px solid var(--line);border-radius:8px;padding:8px;font-size:12.5px}
+.gen .g b{display:block;font-size:13.5px}
+.gen .g ul{margin:4px 0 0;padding-left:16px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20;max-width:90vw;text-align:center}
+.toast.on{opacity:1}
+.empty{padding:28px 12px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px}
+.drop{border:2px dashed var(--accent);border-radius:12px;padding:18px;text-align:center;background:var(--tip)}
+.drop input{display:none}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+</head>
+<body>
+<header class="bar">
+  <img src="../logo.png" alt="" onerror="this.hidden=true">
+  <h1 id="title">見積ナビ <small>試作版・トイレ対応</small></h1>
+  <span class="sp"></span>
+  <button id="homeBtn" hidden>← 案件一覧</button>
+  <button id="priceBtn">単価表</button>
+</header>
+<main><div class="view" id="view"></div></main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   見積ナビ（試作）：現調ナビのZIPを取り込み、ルールで明細を自動作成し、
+   見積書・請求書・原価計算書・発注書（業者別）をExcelで出す
+   ===================================================================== */
+
+/* ---------- 単価表（初期値は「仮」。画面から直せて、端末に保存） ---------- */
+const DEFAULT_PRICES = [
+  // code, 名称, 仕様, 単位, 売価, 原価, 発注先, 分類
+  ['T-DEM','既存便器 撤去・処分','','式',15000,8000,'自社','トイレ'],
+  ['T-BODY-U','便器本体（梅）','タンク式・標準グレード','台',85000,55000,'住設商社','トイレ'],
+  ['T-BODY-T','便器本体（竹）','タンク式・節水・フチなし','台',120000,78000,'住設商社','トイレ'],
+  ['T-BODY-M','便器本体（松）','タンクレス','台',220000,150000,'住設商社','トイレ'],
+  ['T-BODY-W','便器本体（壁排水）','壁排水タイプ','台',130000,85000,'住設商社','トイレ'],
+  ['T-BODY-R','便器本体（リフォーム用）','排水芯可変タイプ','台',125000,82000,'住設商社','トイレ'],
+  ['T-SEAT','温水洗浄便座','脱臭・暖房便座','台',45000,28000,'住設商社','トイレ'],
+  ['T-SET','設置・給排水接続','','式',35000,22000,'設備業者','トイレ'],
+  ['T-ELEC','電気工事（コンセント増設・アース）','','式',18000,12000,'電気業者','トイレ'],
+  ['T-FLOOR','床下地補修','合板増し張り','式',25000,15000,'大工','トイレ'],
+  ['T-HAND','手洗い器 設置','給排水含む','式',65000,42000,'設備業者','トイレ'],
+  ['I-CF','クッションフロア 貼替','量産品','㎡',4500,2800,'内装業者','内装'],
+  ['I-CLOTH','クロス 貼替','量産品','㎡',1300,850,'内装業者','内装'],
+  ['G-MISC','諸経費','工事費の10%','式',0,0,'－','共通'],
+];
+const PRICE_KEY='mitsumori.prices.v1';
+let PRICES=[];
+function loadPrices(){ try{ const j=JSON.parse(localStorage.getItem(PRICE_KEY)||'null'); if(j&&j.length) return j; }catch(e){} return DEFAULT_PRICES.map(r=>({code:r[0],name:r[1],spec:r[2],unit:r[3],price:r[4],cost:r[5],vendor:r[6],cat:r[7],temp:true})); }
+function savePrices(){ try{ localStorage.setItem(PRICE_KEY,JSON.stringify(PRICES)); }catch(e){} }
+const P=code=>PRICES.find(p=>p.code===code);
+
+/* ---------- ルール：現調の答え → 明細（まずはトイレ） ---------- */
+function findSee(work,kw){ const r=(work.見る||[]).find(x=>x.項目.includes(kw)); return r? (r.選択||'') : ''; }
+function findDim(work,kw){ const r=(work.採寸||[]).find(x=>x.項目.includes(kw)); return r? String(r.値||'').trim() : ''; }
+function findAsk(work,kw){ const r=(work.聞く||[]).find(x=>x.質問.includes(kw)); return r? (r.回答||'') : ''; }
+const yes=s=>/はい|する|欲しい|希望|お願い|替え|一緒|ほしい|つけ|付け|yes/i.test(s);
+function line(code,qty,why,extra={}){ const p=P(code)||{code,name:code,unit:'式',price:0,cost:0,vendor:'－'}; return {id:Math.random().toString(36).slice(2,8),code:p.code,name:p.name,spec:p.spec||'',unit:p.unit,qty:+qty||1,price:p.price,cost:p.cost,vendor:p.vendor,auto:!!why,why:why||'',...extra}; }
+
+const RULES = {
+  toilet(work){
+    const L=[], notes=[];
+    L.push(line('T-DEM',1,'基本セット'));
+    // 便器：排水・排水芯で種類が変わる
+    const drain=findSee(work,'排水の管'); const shin=findDim(work,'排水芯');
+    if(drain==='壁'){ L.push(line('T-BODY-W',1,'見る「排水の管」= 壁')); }
+    else if(shin && shin!=='200'){ L.push(line('T-BODY-R',1,`測る「排水芯」= ${shin}（200以外）`)); }
+    else { L.push(line('T-BODY-T',1,'基本セット（竹）。松・竹・梅は右で変更')); }
+    L.push(line('T-SEAT',1,'基本セット'));
+    L.push(line('T-SET',1,'基本セット'));
+    if(findSee(work,'コンセント')==='なし') L.push(line('T-ELEC',1,'見る「コンセント」= なし'));
+    if(findSee(work,'沈む')==='あり') L.push(line('T-FLOOR',1,'見る「床がふわふわ沈む」= あり'));
+    const hand=findAsk(work,'手洗い'); if(/手洗い器|手洗い.*(欲|希望|はい)/.test(hand)&&!/いらない|不要|なし/.test(hand)) L.push(line('T-HAND',1,`聞く「手洗い器」= ${hand}`));
+    const fw=findAsk(work,'床や壁'); if(yes(fw)){
+      const W=+findDim(work,'幅')||0, D=+findDim(work,'奥行')||0; const H=2400;
+      if(W&&D){ L.push(line('I-CF',+(W*D/1e6).toFixed(2),`聞く「床や壁も」= ${fw}。幅${W}×奥行${D}`)); L.push(line('I-CLOTH',+(((W+D)*2*H/1e6)*1.3).toFixed(1),`壁 (${W}+${D})×2×天井高2400 ×1.3`)); }
+      else notes.push('「床や壁も替える」の回答がありますが、部屋の幅・奥行が未入力のため、床・クロスの数量を出せませんでした');
+    }
+    if(!shin) notes.push('排水芯が未入力です。200以外ならリフォーム用便器に変わります');
+    L.push(line('G-MISC',1,'工事費の10%'));
+    return {lines:L,notes};
+  },
+};
+/* 対応していない工事は、基本セットだけ空の明細で */
+function buildLines(work){ const f=RULES[work.種類コード]; if(f) return f(work); return {lines:[line('G-MISC',1,'工事費の10%')],notes:[`「${work.種類}」のルールは未対応です（トイレのみ試作）。手で明細を足してください`]}; }
+
+/* ---------- 保存 ---------- */
+const DB={ mem:{}, open(){ return new Promise((res,rej)=>{ try{ const r=indexedDB.open('mitsumori-navi',1); r.onupgradeneeded=()=>r.result.createObjectStore('jobs',{keyPath:'id'}); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);}catch(e){rej(e)} }); },
+  async tx(m,fn){ const db=await this.open(); return new Promise((res,rej)=>{ const q=fn(db.transaction('jobs',m).objectStore('jobs')); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); },
+  async all(){ try{ return await this.tx('readonly',s=>s.getAll()); }catch(e){ return Object.values(this.mem); } },
+  async put(j){ this.mem[j.id]=j; try{ await this.tx('readwrite',s=>s.put(j)); }catch(e){} },
+  async del(id){ delete this.mem[id]; try{ await this.tx('readwrite',s=>s.delete(id)); }catch(e){} } };
+
+/* ---------- ZIP 読み込み（圧縮なし。現調ナビが作るZIP用） ---------- */
+async function readZip(blob){ const buf=new Uint8Array(await blob.arrayBuffer()); const dv=new DataView(buf.buffer); const dec=new TextDecoder();
+  let i=buf.length-22; while(i>=0 && dv.getUint32(i,true)!==0x06054b50) i--; if(i<0) throw new Error('zip');
+  const n=dv.getUint16(i+10,true); let p=dv.getUint32(i+16,true); const out={};
+  for(let k=0;k<n;k++){ const method=dv.getUint16(p+10,true); const size=dv.getUint32(p+24,true); const nl=dv.getUint16(p+28,true), el=dv.getUint16(p+30,true), cl=dv.getUint16(p+32,true); const lo=dv.getUint32(p+42,true); const name=dec.decode(buf.subarray(p+46,p+46+nl));
+    if(method!==0) throw new Error('compressed'); const lnl=dv.getUint16(lo+26,true), lel=dv.getUint16(lo+28,true); const st=lo+30+lnl+lel; out[name]=buf.subarray(st,st+size); p+=46+nl+el+cl; }
+  return out; }
+
+/* ---------- ZIP 書き出し（Excel用） ---------- */
+const CRC_T=(()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); t[n]=c>>>0; } return t; })();
+function crc32(u){ let c=0xFFFFFFFF; for(let i=0;i<u.length;i++) c=CRC_T[(c^u[i])&0xFF]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+async function makeZip(entries){ const enc=new TextEncoder(); const parts=[]; const cd=[]; let off=0; const d=new Date(); const t=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1), dd=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+  const u32=v=>[v&255,(v>>>8)&255,(v>>>16)&255,(v>>>24)&255], u16=v=>[v&255,(v>>>8)&255];
+  for(const e of entries){ const name=enc.encode(e.name); const data=typeof e.data==='string'?enc.encode(e.data):e.data; const crc=crc32(data);
+    const lh=new Uint8Array([...u32(0x04034b50),...u16(20),...u16(0x0800),...u16(0),...u16(t),...u16(dd),...u32(crc),...u32(data.length),...u32(data.length),...u16(name.length),...u16(0)]);
+    parts.push(lh,name,data); cd.push(new Uint8Array([...u32(0x02014b50),...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(t),...u16(dd),...u32(crc),...u32(data.length),...u32(data.length),...u16(name.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(off)]),name); off+=lh.length+name.length+data.length; }
+  const cdSize=cd.reduce((a,x)=>a+x.length,0); const end=new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),...u16(entries.length),...u16(entries.length),...u32(cdSize),...u32(off),...u16(0)]);
+  return new Blob([...parts,...cd,end],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}); }
+
+/* ---------- Excel（xlsx）を自前で作る：シートごとに行の配列 ---------- */
+const xe=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function colName(n){ let s=''; n++; while(n>0){ const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=Math.floor((n-1)/26); } return s; }
+/* セル: 文字列 / 数値 / {v, s:スタイル番号} 。スタイル: 0 標準, 1 太字, 2 数値(カンマ), 3 太字+枠, 4 枠, 5 数値+枠, 6 見出し(塗り), 7 大きい太字 */
+function sheetXml(rows, widths){
+  const cols=widths?`<cols>${widths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols>`:'';
+  const body=rows.map((r,ri)=>`<row r="${ri+1}">${r.map((c,ci)=>{ if(c===null||c===undefined||c==='') return ''; const ref=colName(ci)+(ri+1); const o=(typeof c==='object')?c:{v:c}; const s=o.s?` s="${o.s}"`:'';
+    if(typeof o.v==='number') return `<c r="${ref}"${s}><v>${o.v}</v></c>`; return `<c r="${ref}" t="inlineStr"${s}><is><t xml:space="preserve">${xe(o.v)}</t></is></c>`; }).join('')}</row>`).join('');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetFormatPr defaultRowHeight="18"/>${cols}<sheetData>${body}</sheetData><pageSetup paperSize="9" orientation="portrait" fitToWidth="1"/></worksheet>`;
+}
+const STYLES=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0"/></numFmts>
+<fonts count="3"><font><sz val="11"/><name val="Yu Gothic"/></font><font><b/><sz val="11"/><name val="Yu Gothic"/></font><font><b/><sz val="16"/><name val="Yu Gothic"/></font></fonts>
+<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFDE3D2"/><bgColor indexed="64"/></patternFill></fill></fills>
+<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="thin"/><diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="8">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"><alignment wrapText="1" vertical="center"/></xf>
+<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>
+<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+async function makeXlsx(sheets){ // sheets: [{name, rows, widths}]
+  const safe=n=>n.replace(/[\\/?*\[\]:]/g,'_').slice(0,31);
+  const wb=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((s,i)=>`<sheet name="${xe(safe(s.name))}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>`;
+  const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rIdS" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`;
+  const root=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+  const entries=[{name:'[Content_Types].xml',data:ct},{name:'_rels/.rels',data:root},{name:'xl/workbook.xml',data:wb},{name:'xl/_rels/workbook.xml.rels',data:rels},{name:'xl/styles.xml',data:STYLES}];
+  sheets.forEach((s,i)=>entries.push({name:`xl/worksheets/sheet${i+1}.xml`,data:sheetXml(s.rows,s.widths)}));
+  return makeZip(entries);
+}
+
+/* ---------- 書類の中身（仮の書式） ---------- */
+const COMPANY={name:'株式会社ワイケイアート',addr:'千葉県佐倉市上志津',tel:'043-462-4208',hours:'9:00-18:00'};
+const yen=n=>Math.round(n).toLocaleString('ja-JP');
+function calc(job){ const L=job.lines; const misc=L.find(l=>l.code==='G-MISC'); const body=L.filter(l=>l.code!=='G-MISC');
+  const sub=body.reduce((a,l)=>a+l.qty*l.price,0); const cost=body.reduce((a,l)=>a+l.qty*l.cost,0);
+  const miscAmt=misc?Math.round(sub*(job.miscRate??10)/100):0; const disc=+job.discount||0; const net=sub+miscAmt-disc; const tax=Math.round(net*(job.taxRate??10)/100);
+  return {sub,cost,miscAmt,disc,net,tax,total:net+tax,profit:net-cost,rate:net?(net-cost)/net*100:0}; }
+function docHeader(title,job,no){ const c=calc(job); return [
+  [{v:title,s:7}], [], [`${job.customer.name||''} 様`,'', '', '', {v:COMPANY.name,s:1}], [`${job.customer.addr||''}`,'','','',COMPANY.addr], [`TEL ${job.customer.tel||''}`,'','','',`TEL ${COMPANY.tel}`],
+  [], [{v:'件名',s:1},`${job.works.join('・')} 工事`,'',{v:'No.',s:1},no], [{v:'日付',s:1},job.date,'',{v:'担当',s:1},job.staff||''], [] ]; }
+function estimateRows(job,invoice){ const c=calc(job); const rows=docHeader(invoice?'御請求書':'御見積書',job,(invoice?'I-':'E-')+job.date.replace(/-/g,'')+'-'+job.id.slice(0,4).toUpperCase());
+  rows.push([{v:invoice?'御請求金額（税込）':'御見積金額（税込）',s:1},{v:c.total,s:2},'円']); rows.push([]);
+  rows.push([{v:'No',s:3},{v:'工事項目',s:3},{v:'仕様',s:3},{v:'数量',s:3},{v:'単位',s:3},{v:'単価',s:3},{v:'金額',s:3}]);
+  let i=1; job.lines.filter(l=>l.code!=='G-MISC').forEach(l=>rows.push([{v:i++,s:4},{v:l.name,s:4},{v:l.spec||'',s:4},{v:l.qty,s:5},{v:l.unit,s:4},{v:l.price,s:5},{v:Math.round(l.qty*l.price),s:5}]));
+  rows.push([{v:'',s:4},{v:'小計',s:4},{v:'',s:4},{v:'',s:4},{v:'',s:4},{v:'',s:4},{v:c.sub,s:5}]);
+  rows.push([{v:'',s:4},{v:'諸経費',s:4},{v:`工事費の${job.miscRate??10}%`,s:4},{v:1,s:5},{v:'式',s:4},{v:c.miscAmt,s:5},{v:c.miscAmt,s:5}]);
+  if(c.disc) rows.push([{v:'',s:4},{v:'値引き',s:4},{v:'',s:4},{v:'',s:4},{v:'',s:4},{v:'',s:4},{v:-c.disc,s:5}]);
+  rows.push([{v:'',s:4},{v:'税抜合計',s:4},{v:'',s:4},{v:'',s:4},{v:'',s:4},{v:'',s:4},{v:c.net,s:5}]);
+  rows.push([{v:'',s:4},{v:`消費税（${job.taxRate??10}%）`,s:4},{v:'',s:4},{v:'',s:4},{v:'',s:4},{v:'',s:4},{v:c.tax,s:5}]);
+  rows.push([{v:'',s:6},{v:'合計（税込）',s:6},{v:'',s:6},{v:'',s:6},{v:'',s:6},{v:'',s:6},{v:c.total,s:5}]);
+  rows.push([]); rows.push([{v:'備考',s:1}]); (job.note||'').split('\n').forEach(t=>rows.push([t])); if(!invoice) rows.push(['有効期限：発行日より30日']);
+  return {name:invoice?'請求書':'見積書',rows,widths:[5,30,24,8,6,12,14]}; }
+function costRows(job){ const c=calc(job); const rows=[[{v:'原価計算書（社内用）',s:7}],[`${job.customer.name||''} 様　${job.works.join('・')} 工事　${job.date}`],[],
+  [{v:'工事項目',s:3},{v:'仕様',s:3},{v:'数量',s:3},{v:'単位',s:3},{v:'売価単価',s:3},{v:'売価',s:3},{v:'原価単価',s:3},{v:'原価',s:3},{v:'粗利',s:3},{v:'発注先',s:3},{v:'自動/手動',s:3},{v:'根拠',s:3}]];
+  job.lines.filter(l=>l.code!=='G-MISC').forEach(l=>rows.push([{v:l.name,s:4},{v:l.spec||'',s:4},{v:l.qty,s:5},{v:l.unit,s:4},{v:l.price,s:5},{v:Math.round(l.qty*l.price),s:5},{v:l.cost,s:5},{v:Math.round(l.qty*l.cost),s:5},{v:Math.round(l.qty*(l.price-l.cost)),s:5},{v:l.vendor,s:4},{v:l.auto?'自動':'手動',s:4},{v:l.why||'',s:4}]));
+  rows.push([]); rows.push([{v:'売価小計',s:1},{v:c.sub,s:2}]); rows.push([{v:'諸経費',s:1},{v:c.miscAmt,s:2}]); if(c.disc) rows.push([{v:'値引き',s:1},{v:-c.disc,s:2}]); rows.push([{v:'税抜合計',s:1},{v:c.net,s:2}]); rows.push([{v:'原価合計',s:1},{v:c.cost,s:2}]); rows.push([{v:'粗利',s:1},{v:c.profit,s:2},`${c.rate.toFixed(1)}%`]);
+  return {name:'原価計算書',rows,widths:[30,22,7,6,11,12,11,12,11,12,9,40]}; }
+function orderSheets(job){ const vendors=[...new Set(job.lines.filter(l=>l.code!=='G-MISC'&&l.vendor&&l.vendor!=='－'&&l.vendor!=='自社').map(l=>l.vendor))];
+  return vendors.map(v=>{ const ls=job.lines.filter(l=>l.vendor===v); const sum=ls.reduce((a,l)=>a+l.qty*l.cost,0);
+    const rows=[[{v:'発注書',s:7}],[],[`${v} 御中`,'','',{v:COMPANY.name,s:1}],['','','',COMPANY.addr],['','','',`TEL ${COMPANY.tel}`],[],[{v:'現場',s:1},`${job.customer.name||''} 様邸　${job.customer.addr||''}`],[{v:'工事',s:1},`${job.works.join('・')} 工事`],[{v:'発注日',s:1},job.date],[{v:'工期',s:1},job.period||'別途連絡'],[],
+      [{v:'No',s:3},{v:'工事項目',s:3},{v:'仕様',s:3},{v:'数量',s:3},{v:'単位',s:3},{v:'単価',s:3},{v:'金額',s:3}]];
+    let i=1; ls.forEach(l=>rows.push([{v:i++,s:4},{v:l.name,s:4},{v:l.spec||'',s:4},{v:l.qty,s:5},{v:l.unit,s:4},{v:l.cost,s:5},{v:Math.round(l.qty*l.cost),s:5}]));
+    rows.push([{v:'',s:6},{v:'合計（税抜）',s:6},{v:'',s:6},{v:'',s:6},{v:'',s:6},{v:'',s:6},{v:sum,s:5}]); rows.push([]); rows.push([{v:'備考',s:1}]); rows.push(['現場の鍵・駐車・養生については担当者まで']);
+    return {name:'発注書_'+v,rows,widths:[5,30,24,8,6,12,14]}; }); }
+async function exportXlsx(job,kind){ const sheets=[]; if(kind==='all'||kind==='est') sheets.push(estimateRows(job,false)); if(kind==='all'||kind==='inv') sheets.push(estimateRows(job,true)); if(kind==='all'||kind==='cost') sheets.push(costRows(job)); if(kind==='all'||kind==='order') sheets.push(...orderSheets(job));
+  if(!sheets.length){ toast('発注先が設定された明細がありません'); return; }
+  const blob=await makeXlsx(sheets); const name=`${{all:'見積一式',est:'見積書',inv:'請求書',cost:'原価計算書',order:'発注書'}[kind]}_${job.date}_${(job.customer.name||'noname').replace(/\s+/g,'')}.xlsx`;
+  try{ const dl=window.claude?.use ? await window.claude.use('downloads') : null; if(dl){ await dl.save({filename:name,data:blob}); toast('書き出しました'); return; } }catch(e){ if(e&&e.code==='declined'){ toast('キャンセルしました'); return; } }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800); toast('書き出しました'); }
+
+/* ---------- 画面 ---------- */
+const state={jobs:[],cur:null,showPrices:false};
+const $=s=>document.querySelector(s); const view=$('#view');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),1800); }
+const today=()=>{ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+function save(){ if(state.cur){ state.cur.updatedAt=Date.now(); DB.put(state.cur); } }
+
+async function importZip(file){
+  const dec=new TextDecoder(); let g;
+  if(/\.zip$/i.test(file.name)){ const z=await readZip(file); const j=z['現調データ.json']; if(!j) throw new Error('現調データ.json がありません'); g=JSON.parse(dec.decode(j)); }
+  else g=JSON.parse(await file.text());
+  if(g.形式!=='ykart-genchi-v1') throw new Error('現調ナビの書き出しファイルではありません');
+  const works=(g.工事||[]).filter(w=>w.種類コード!=='common');
+  const job={id:Math.random().toString(36).slice(2,10),createdAt:Date.now(),updatedAt:Date.now(),date:today(),staff:g.担当者||'',
+    customer:{name:g.お客様?.名前||'',addr:g.お客様?.住所||'',tel:g.お客様?.電話||''},
+    works:works.map(w=>w.種類),genchi:g,lines:[],notes:[],miscRate:10,taxRate:10,discount:0,note:'',period:''};
+  works.forEach(w=>{ const r=buildLines(w); job.lines.push(...r.lines.filter(l=>l.code!=='G-MISC')); job.notes.push(...r.notes); });
+  job.lines.push(line('G-MISC',1,'工事費の10%'));
+  return job;
+}
+
+function renderHome(){
+  $('#homeBtn').hidden=true; state.showPrices=false;
+  const list=[...state.jobs].sort((a,b)=>b.updatedAt-a.updatedAt);
+  view.innerHTML=`
+  <div class="tip"><b>試作版です。</b>現調ナビで書き出したZIPを取り込むと、ルールで明細を自動で並べ、見積書・請求書・原価計算書・発注書をExcelで出します。今はトイレのルールだけ入っています。単価は仮の数字です（右上の「単価表」で変更できます）。</div>
+  <label class="drop"><b>📂 現調ナビのZIPを取り込む</b><br><span class="muted">タップしてファイルを選ぶ（ZIP または 現調データ.json）</span><input type="file" id="zipIn" accept=".zip,.json"></label>
+  <div class="card"><h2>案件 <span class="cnt">${list.length}件</span></h2>
+    ${list.length?`<div class="list">${list.map(j=>{const c=calc(j); return `<button class="item" data-open="${j.id}"><div><b>${esc(j.customer.name||'（お名前なし）')} 様　${esc(j.works.join('・'))}</b><span>${esc(j.date)}　${esc(j.customer.addr||'')}　明細 ${j.lines.length}行</span></div><div class="amt">¥${yen(c.total)}<span>粗利 ${c.rate.toFixed(0)}%</span></div></button>`;}).join('')}</div>`:'<div class="empty">まだ案件がありません。上からZIPを取り込んでください。</div>'}
+  </div>`;
+  $('#zipIn').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ const job=await importZip(f); state.jobs.push(job); state.cur=job; await DB.put(job); toast(`取り込みました：${job.works.join('・')}`); render(); }catch(err){ toast('取り込めませんでした：'+(err.message||'')); } };
+  view.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{ state.cur=state.jobs.find(j=>j.id===b.dataset.open); render(); });
+}
+
+function renderJob(){
+  const j=state.cur; $('#homeBtn').hidden=false; const c=calc(j);
+  const gradeOpts=['T-BODY-U','T-BODY-T','T-BODY-M'];
+  view.innerHTML=`
+  <div class="card"><h2>${esc(j.customer.name||'（お名前なし）')} 様　${esc(j.works.join('・'))} 工事 <span class="cnt">取込元：現調 ${esc(j.genchi.調査日||'')}</span></h2>
+    <div class="row">
+      <div class="field"><label>お客様名</label><input data-j="customer.name" value="${esc(j.customer.name)}"></div>
+      <div class="field"><label>住所</label><input data-j="customer.addr" value="${esc(j.customer.addr)}"></div>
+      <div class="field"><label>電話</label><input data-j="customer.tel" value="${esc(j.customer.tel)}"></div>
+      <div class="field"><label>見積日</label><input type="date" data-j="date" value="${esc(j.date)}"></div>
+      <div class="field"><label>担当</label><input data-j="staff" value="${esc(j.staff)}"></div>
+      <div class="field"><label>工期（発注書用）</label><input data-j="period" value="${esc(j.period||'')}" placeholder="例：12/10〜12/11"></div>
+    </div></div>
+  ${j.notes.length?`<div class="tip"><b>確認してください</b><ul style="margin:4px 0 0;padding-left:18px">${j.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul></div>`:''}
+  <details class="card"><summary>現調の内容（ルールの根拠）</summary><div class="gen" style="margin-top:10px">${(j.genchi.工事||[]).map(w=>`<div class="g"><b>${esc(w.種類)}</b><ul>${(w.見る||[]).filter(x=>x.選択||x.メモ).map(x=>`<li>${esc(x.項目)}：<b>${esc(x.選択||'確認')}</b>${x.メモ?'（'+esc(x.メモ)+'）':''}</li>`).join('')}${(w.採寸||[]).filter(x=>String(x.値).trim()).map(x=>`<li>${esc(x.項目)}：<b>${esc(x.値)} ${esc(x.単位)}</b></li>`).join('')}${(w.聞く||[]).filter(x=>x.回答).map(x=>`<li>${esc(x.質問)} → <b>${esc(x.回答)}</b></li>`).join('')}</ul></div>`).join('')}</div></details>
+  <div class="card"><h2>明細 <span class="pill auto">自動</span><span class="muted">＝現調データから自動で入った行</span><span class="cnt">${j.lines.length}行</span></h2>
+    <div class="tscroll"><table>
+      <tr><th></th><th>工事項目</th><th>仕様</th><th class="num">数量</th><th>単位</th><th class="num">売価単価</th><th class="num">売価</th><th class="num">原価単価</th><th class="num">原価</th><th>発注先</th><th></th></tr>
+      ${j.lines.map(l=>{ const misc=l.code==='G-MISC'; const grade=/^T-BODY-[UTM]$/.test(l.code);
+        return `<tr data-l="${l.id}" class="${misc?'sub':''}"><td>${l.auto?`<span class="src" title="${esc(l.why)}">自動</span>`:'<span class="badge">手動</span>'}</td>
+        <td>${grade?`<select data-grade="${l.id}">${gradeOpts.map(g=>`<option value="${g}" ${g===l.code?'selected':''}>${esc(P(g).name)}</option>`).join('')}</select>`:`<input data-f="name" value="${esc(l.name)}" ${misc?'disabled':''}>`}${l.why?`<div class="muted" style="font-size:11px">${esc(l.why)}</div>`:''}</td>
+        <td><input data-f="spec" value="${esc(l.spec||'')}" ${misc?'disabled':''}></td>
+        <td class="num">${misc?'1':`<input class="q" type="number" step="0.1" data-f="qty" value="${l.qty}">`}</td><td>${esc(l.unit)}</td>
+        <td class="num">${misc?`<input class="q" type="number" data-j="miscRate" value="${j.miscRate}" title="諸経費率%">%`:`<input class="p" type="number" data-f="price" value="${l.price}">`}</td>
+        <td class="num">${misc?yen(c.miscAmt):yen(l.qty*l.price)}</td>
+        <td class="num">${misc?'':`<input class="p" type="number" data-f="cost" value="${l.cost}">`}</td>
+        <td class="num">${misc?'':yen(l.qty*l.cost)}</td>
+        <td>${misc?'':`<input data-f="vendor" value="${esc(l.vendor)}" style="width:100px">`}</td>
+        <td>${misc?'':`<button class="btn sm danger" data-del="${l.id}">×</button>`}</td></tr>`; }).join('')}
+    </table></div>
+    <div class="actions" style="margin-top:10px"><select id="addSel" style="max-width:360px"><option value="">＋ 単価表から明細を追加…</option>${PRICES.filter(p=>p.code!=='G-MISC').map(p=>`<option value="${p.code}">[${esc(p.cat)}] ${esc(p.name)}　¥${yen(p.price)}/${esc(p.unit)}</option>`).join('')}</select><button class="btn sm" id="addFree">空の行を追加</button><button class="btn sm" id="rebuild">現調データからやり直す</button></div>
+    <div class="row" style="margin-top:10px"><div class="field"><label>値引き（円）</label><input type="number" data-j="discount" value="${j.discount||0}"></div><div class="field"><label>消費税率（%）</label><input type="number" data-j="taxRate" value="${j.taxRate??10}"></div><div class="field" style="flex:3 1 300px"><label>備考（見積書に印字）</label><input data-j="note" value="${esc(j.note||'')}" placeholder="例：工事期間 2日間。既存品の処分費を含みます"></div></div>
+    <div class="tot"><div><small>税抜合計</small><b>¥${yen(c.net)}</b></div><div><small>消費税</small><b>¥${yen(c.tax)}</b></div><div><small>税込合計（見積金額）</small><b>¥${yen(c.total)}</b></div><div><small>原価合計</small><b>¥${yen(c.cost)}</b></div><div class="g"><small>粗利</small><b>¥${yen(c.profit)}（${c.rate.toFixed(1)}%）</b></div></div>
+  </div>
+  <div class="card"><h2>書類を出す（Excel）</h2>
+    <div class="actions"><button class="btn primary" data-x="all">4つまとめて1冊（見積・請求・原価・発注）</button><button class="btn" data-x="est">見積書</button><button class="btn" data-x="inv">請求書</button><button class="btn green" data-x="cost">原価計算書</button><button class="btn green" data-x="order">発注書（業者別）</button></div>
+    <p class="muted" style="margin:8px 0 0">書式は仮です。御社の見積書・請求書・原価計算書・発注書のサンプルをいただければ、その形に合わせます。</p></div>
+  <div class="card"><button class="btn sm danger" id="delJob">この案件を削除</button></div>`;
+  const rerender=()=>renderJob();
+  view.querySelectorAll('[data-j]').forEach(el=>el.onchange=()=>{ const path=el.dataset.j.split('.'); let o=j; while(path.length>1) o=o[path.shift()]; o[path[0]]=el.type==='number'?+el.value:el.value; save(); if(['miscRate','discount','taxRate'].includes(el.dataset.j)) rerender(); });
+  view.querySelectorAll('tr[data-l] [data-f]').forEach(el=>el.onchange=()=>{ const l=j.lines.find(x=>x.id===el.closest('tr').dataset.l); l[el.dataset.f]=el.type==='number'?+el.value:el.value; save(); rerender(); });
+  view.querySelectorAll('[data-grade]').forEach(sel=>sel.onchange=()=>{ const l=j.lines.find(x=>x.id===sel.dataset.grade); const p=P(sel.value); Object.assign(l,{code:p.code,name:p.name,spec:p.spec,price:p.price,cost:p.cost,vendor:p.vendor,why:(l.why||'').replace(/（竹）.*$/,'')+'→ グレード変更'}); save(); rerender(); });
+  view.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ j.lines=j.lines.filter(x=>x.id!==b.dataset.del); save(); rerender(); });
+  $('#addSel').onchange=e=>{ if(!e.target.value) return; const misc=j.lines.findIndex(x=>x.code==='G-MISC'); j.lines.splice(misc<0?j.lines.length:misc,0,line(e.target.value,1,'')); save(); rerender(); };
+  $('#addFree').onclick=()=>{ const misc=j.lines.findIndex(x=>x.code==='G-MISC'); j.lines.splice(misc<0?j.lines.length:misc,0,{id:Math.random().toString(36).slice(2,8),code:'FREE',name:'',spec:'',unit:'式',qty:1,price:0,cost:0,vendor:'',auto:false,why:''}); save(); rerender(); };
+  $('#rebuild').onclick=()=>{ const works=(j.genchi.工事||[]).filter(w=>w.種類コード!=='common'); j.lines=[]; j.notes=[]; works.forEach(w=>{ const r=buildLines(w); j.lines.push(...r.lines.filter(l=>l.code!=='G-MISC')); j.notes.push(...r.notes); }); j.lines.push(line('G-MISC',1,'工事費の10%')); save(); rerender(); toast('現調データから作り直しました'); };
+  view.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>exportXlsx(j,b.dataset.x));
+  $('#delJob').onclick=async()=>{ await DB.del(j.id); state.jobs=state.jobs.filter(x=>x.id!==j.id); state.cur=null; render(); };
+}
+
+function renderPrices(){
+  $('#homeBtn').hidden=false;
+  view.innerHTML=`
+  <div class="tip"><b>単価表（この端末に保存）</b>　初期値は仮の数字です。売価・原価・発注先を直すと、次に取り込む案件から反映されます。<b>ここに本物の単価を入れたら、このアプリは社外に見せないでください。</b></div>
+  <div class="card"><h2>単価表 <span class="cnt">${PRICES.length}行</span></h2>
+    <div class="tscroll"><table><tr><th>コード</th><th>分類</th><th>名称</th><th>仕様</th><th>単位</th><th class="num">売価</th><th class="num">原価</th><th>発注先</th><th></th></tr>
+    ${PRICES.map((p,i)=>`<tr data-p="${i}"><td><input data-pf="code" value="${esc(p.code)}" style="width:90px"></td><td><input data-pf="cat" value="${esc(p.cat)}" style="width:70px"></td><td><input data-pf="name" value="${esc(p.name)}"></td><td><input data-pf="spec" value="${esc(p.spec||'')}"></td><td><input data-pf="unit" value="${esc(p.unit)}" style="width:50px"></td><td><input class="p" type="number" data-pf="price" value="${p.price}"></td><td><input class="p" type="number" data-pf="cost" value="${p.cost}"></td><td><input data-pf="vendor" value="${esc(p.vendor)}" style="width:100px"></td><td><button class="btn sm danger" data-pdel="${i}">×</button></td></tr>`).join('')}
+    </table></div>
+    <div class="actions" style="margin-top:10px"><button class="btn sm" id="pAdd">＋ 行を追加</button><button class="btn sm" id="pReset">初期値に戻す</button><button class="btn sm" id="pExport">Excelに書き出す</button></div></div>`;
+  view.querySelectorAll('[data-pf]').forEach(el=>el.onchange=()=>{ const p=PRICES[+el.closest('tr').dataset.p]; p[el.dataset.pf]=el.type==='number'?+el.value:el.value; p.temp=false; savePrices(); });
+  view.querySelectorAll('[data-pdel]').forEach(b=>b.onclick=()=>{ PRICES.splice(+b.dataset.pdel,1); savePrices(); renderPrices(); });
+  $('#pAdd').onclick=()=>{ PRICES.push({code:'NEW-'+(PRICES.length+1),cat:'',name:'',spec:'',unit:'式',price:0,cost:0,vendor:''}); savePrices(); renderPrices(); };
+  $('#pReset').onclick=()=>{ localStorage.removeItem(PRICE_KEY); PRICES=loadPrices(); renderPrices(); toast('初期値に戻しました'); };
+  $('#pExport').onclick=async()=>{ const rows=[[{v:'コード',s:3},{v:'分類',s:3},{v:'名称',s:3},{v:'仕様',s:3},{v:'単位',s:3},{v:'売価',s:3},{v:'原価',s:3},{v:'発注先',s:3}],...PRICES.map(p=>[{v:p.code,s:4},{v:p.cat,s:4},{v:p.name,s:4},{v:p.spec||'',s:4},{v:p.unit,s:4},{v:p.price,s:5},{v:p.cost,s:5},{v:p.vendor,s:4}])]; const blob=await makeXlsx([{name:'単価表',rows,widths:[12,10,34,26,6,12,12,14]}]); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='単価表.xlsx'; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800); };
+}
+
+function render(){ if(state.showPrices) return renderPrices(); if(state.cur) return renderJob(); renderHome(); }
+$('#homeBtn').onclick=()=>{ state.cur=null; state.showPrices=false; render(); };
+$('#priceBtn').onclick=()=>{ state.showPrices=!state.showPrices; render(); };
+(async()=>{ PRICES=loadPrices(); state.jobs=await DB.all(); render(); })();
+</script>
+</body>
+</html>

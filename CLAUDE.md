@@ -25,6 +25,7 @@ Claude Code の別セッション・別アカウントで続きを編集する�
 | `img/<種類>.jpg` | 工事を選ぶタイルの写真（toilet, bath, wash, kitchen, door, floor, cloth, exterior, leak, fence, window, entrance, balcony, carport, parking, boiler, ecocute, washitsu, bathx） |
 | `manifest.json` / `sw.js` | ホーム画面追加・オフライン用。`sw.js` の `CACHE` 名は更新のたびに v を上げる |
 | `README.md` | 使い方・公開方法 |
+| `mitsumori/index.html` | 見積ナビ（試作）。現調ZIPを取り込み、ルール（`RULES`）で明細を自動作成し、見積書・請求書・原価計算書・発注書をExcel（自前xlsx生成）で出す。単価表は端末のlocalStorage。トイレのみルール実装済み |
 | `rules/estimate-rules.json` | 見積アプリ用のルール原案（工事ごとの基本セット・条件で追加・数量計算）。単価は含まない |
 
 ## index.html の構造
